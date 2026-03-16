@@ -28,9 +28,9 @@ export default function ShipCard() {
       return
     }
 
-    // Quick ship logic (default title and category)
+    // Quick ship logic (using title as the content capture or a default)
     const { error } = await supabase.from('posts').insert({
-      title: `Ship Log: ${new Date().toLocaleDateString()}`,
+      title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
       content: content,
       category: 'Other',
       user_id: user.id,
@@ -65,7 +65,7 @@ export default function ShipCard() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Captured a logic gate? Refactor completed? Proof of build..."
+              placeholder="What did you build today?"
               className="w-full bg-transparent border-none text-[13px] text-gray-300 placeholder:text-gray-600 focus:ring-0 p-0 resize-none min-h-[60px]"
             />
         </div>

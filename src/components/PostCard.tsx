@@ -50,7 +50,7 @@ export default function PostCard({ post }: { post: Post }) {
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-lg font-bold text-white leading-tight group-hover:translate-x-1 transition-transform">
-              {post.title}
+              {post.title.replace(/^Ship Log: /, '')}
             </h3>
             <ArrowUpRight size={16} className="text-white/20 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
           </div>

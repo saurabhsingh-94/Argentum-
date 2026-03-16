@@ -21,10 +21,10 @@ export default function Footer() {
               The source of truth for creators.
             </p>
             <div className="flex items-center gap-4">
-              <SocialLink icon={<Github size={18} />} href="https://github.com" />
+              <SocialLink icon={<Github size={18} />} href="https://github.com/saurabhsingh-98" />
               <SocialLink icon={<Twitter size={18} />} href="https://twitter.com" />
-              <SocialLink icon={<Linkedin size={18} />} href="https://linkedin.com" />
-              <SocialLink icon={<Globe size={18} />} href="https://argentum.build" />
+              <SocialLink icon={<Linkedin size={18} />} href="https://www.linkedin.com/in/saurabh-singh-381a65383/" />
+              <SocialLink icon={<Globe size={18} />} href="https://argentum-silk.vercel.app" />
             </div>
           </div>
 

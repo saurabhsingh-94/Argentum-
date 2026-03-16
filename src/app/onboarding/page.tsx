@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, AtSign, FileText, Rocket } from 'lucide-react'
+import { User, AtSign, FileText, Rocket, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export default function Onboarding() {
   const [loading, setLoading] = useState(false)
@@ -12,6 +12,8 @@ export default function Onboarding() {
   const [bio, setBio] = useState('')
   const [currentlyBuilding, setCurrentlyBuilding] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
+  const [usernameMessage, setUsernameMessage] = useState('')
   
   const router = useRouter()
   const supabase = createClient()
@@ -27,16 +29,48 @@ export default function Onboarding() {
       }
       setUser(user)
       
-      // Auto-fill from GitHub if available
-      setDisplayName(user.user_metadata.full_name || '')
-      setUsername(user.user_metadata.user_name || '')
+      // Auto-fill from GitHub/Google if available
+      setDisplayName(user.user_metadata.full_name || user.user_metadata.name || '')
+      const rawUsername = user.user_metadata.user_name || user.user_metadata.preferred_username || ''
+      if (rawUsername) {
+        setUsername(rawUsername.toLowerCase())
+      }
     }
     checkUser()
   }, [supabase, router])
 
+  // Real-time username check
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('idle')
+      setUsernameMessage('')
+      return
+    }
+
+    const checkAvailability = async () => {
+      setUsernameStatus('checking')
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .single()
+
+      if (error && error.code === 'PGRST116') { // Not found -> Available
+        setUsernameStatus('available')
+        setUsernameMessage('Username is available')
+      } else {
+        setUsernameStatus('taken')
+        setUsernameMessage('Username already taken')
+      }
+    }
+
+    const timer = setTimeout(checkAvailability, 500)
+    return () => clearTimeout(timer)
+  }, [username, supabase])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || loading) return
+    if (!user || loading || usernameStatus !== 'available') return
 
     setLoading(true)
     try {
@@ -78,14 +112,30 @@ export default function Onboarding() {
               <AtSign size={14} />
               <span>Username</span>
             </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-[#1a1a1a] border border-white/5 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-accent transition-colors"
-              placeholder="johndoe"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                className={`w-full bg-[#1a1a1a] border rounded-lg px-4 py-3 text-sm focus:outline-none transition-all ${
+                  usernameStatus === 'available' ? 'border-green-500/50 focus:border-green-500' : 
+                  usernameStatus === 'taken' ? 'border-red-500/50 focus:border-red-500' : 
+                  'border-white/5 focus:border-accent'
+                }`}
+                placeholder="johndoe"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {usernameStatus === 'checking' && <div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                {usernameStatus === 'available' && <CheckCircle2 className="text-green-500" size={16} />}
+                {usernameStatus === 'taken' && <AlertCircle className="text-red-500" size={16} />}
+              </div>
+            </div>
+            {usernameMessage && (
+              <span className={`text-[10px] font-bold uppercase tracking-wider ml-1 ${usernameStatus === 'available' ? 'text-green-500' : 'text-red-500'}`}>
+                {usernameMessage}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -132,8 +182,11 @@ export default function Onboarding() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-accent text-black font-bold py-3 rounded-lg hover:bg-accent/90 transition-all shadow-lg mt-4 active:scale-95 disabled:opacity-50"
+            disabled={loading || usernameStatus !== 'available'}
+            className={`
+              w-full font-bold py-4 rounded-xl transition-all shadow-lg mt-4 active:scale-95 disabled:opacity-50 disabled:grayscale
+              ${usernameStatus === 'available' ? 'silver-metallic shadow-glow' : 'bg-white/5 text-gray-500 border border-white/5'}
+            `}
           >
             {loading ? 'Setting up...' : 'Get Started'}
           </button>
