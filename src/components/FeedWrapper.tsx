@@ -4,7 +4,7 @@ import { useState } from 'react'
 import PostCard from './PostCard'
 import CategoryFilter from './CategoryFilter'
 import ShipCard from './ShipCard'
-import PostSkeleton from './PostSkeleton'
+import Skeleton from './Skeleton'
 
 export default function FeedWrapper({ initialPosts }: { initialPosts: any[] }) {
   const [selectedCategory, setSelectedCategory] = useState('All')

@@ -6,7 +6,7 @@ import { Calendar, Hash, ShieldCheck, Tag, User } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function PostDetail({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   const { data: post, error } = await supabase
     .from('posts')

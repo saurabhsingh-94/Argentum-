@@ -5,7 +5,7 @@ import Link from 'next/link'
 import ScrollReveal from '@/components/ScrollReveal'
 
 export default async function Home() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // Parallel fetching of stats
   const [

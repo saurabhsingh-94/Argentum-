@@ -6,7 +6,7 @@ import { Github, Globe, Award, Flame, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   
   // Fetch user profile
   const { data: profile, error: profileError } = await supabase
@@ -114,8 +114,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
               ? "You haven't shared any builds on your profile yet." 
               : `@{profile.username} hasn't published any build logs yet.`
             }
-            ctaText={isOwner ? "Share first build" : undefined}
-            ctaHref={isOwner ? "/new" : undefined}
+            showAction={isOwner}
           />
         )}
       </div>
