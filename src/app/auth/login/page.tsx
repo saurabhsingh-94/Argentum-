@@ -69,8 +69,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-silver/5 blur-[120px] rounded-full pointer-events-none" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" 
+      />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-silver/5 blur-[120px] rounded-full pointer-events-none" 
+      />
       
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center gap-8 mb-12">
@@ -86,10 +96,17 @@ export default function LoginPage() {
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 40, scale: 0.95, rotateX: -10 }}
+          animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+          transition={{ 
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            mass: 1,
+            delay: 0.1
+          }}
           className="glass-card p-10 border-silver/20 bg-[#0a0a0a]/50 backdrop-blur-2xl shadow-2xl relative group/card"
+          style={{ perspective: "1000px" }}
         >
           {/* Decorative Corner */}
           <div className="absolute -top-1 -right-1 w-8 h-8 border-t border-r border-silver/40 rounded-tr-xl" />
