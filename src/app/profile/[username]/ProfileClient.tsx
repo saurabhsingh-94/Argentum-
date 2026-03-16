@@ -213,7 +213,7 @@ export default function ProfileClient({ initialProfile, posts, isOwner }: Profil
                   title="No shipping logs found" 
                   description={isOwner 
                     ? "You haven't initialized any builds yet. Start your streak today." 
-                    : `@{profile.username} is currently formulating their first build.`
+                    : `@${profile.username} is currently formulating their first build.`
                   }
                   showAction={isOwner}
                 />

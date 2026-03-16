@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Github, Plus, LogIn, ChevronDown, Search } from 'lucide-react'
+import { Github, Plus, LogIn, ChevronDown, Search, Loader2 } from 'lucide-react'
 
 export default function Navbar({ onSearchClick }: { onSearchClick: () => void }) {
   const supabase = createClient()
@@ -112,9 +112,14 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                 </div>
               </div>
 
-              <Link href={profileUsername ? `/profile/${profileUsername}` : '#'} className="group relative">
+              <Link 
+                href={profileUsername ? `/profile/${profileUsername}` : user ? '/onboarding' : '#'} 
+                className="group relative"
+              >
                 <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver group-hover:border-white/40 group-hover:silver-glow transition-all duration-500">
-                  {user.user_metadata.avatar_url ? (
+                  {!profileUsername && user ? (
+                    <Loader2 size={16} className="animate-spin text-silver/40" />
+                  ) : user.user_metadata.avatar_url ? (
                     <img src={user.user_metadata.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
                     user.email?.[0].toUpperCase()
