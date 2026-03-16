@@ -37,6 +37,8 @@ export default function ShipCard() {
       alert("Shipping failed. Try again!")
     } else {
       setContent('')
+      // Atomic Feedback: Trigger a "Streak Extended" event
+      console.log("Streak Extended!")
       router.refresh()
     }
     setIsShipping(false)

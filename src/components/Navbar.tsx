@@ -75,6 +75,23 @@ export default function Navbar() {
                 <Plus size={14} />
                 <span>Build Log</span>
               </Link>
+
+              {/* Build Streak UI */}
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 group/streak hover:border-orange-500/50 transition-all cursor-default">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500 blur-md opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
+                  <svg className="w-4 h-4 text-orange-500 relative z-10 animate-bounce" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.9 2.5C11.5 1.5 9.8 1.4 8.6 2.1c-2.3 1.3-3.1 4.5-1.5 7 .2.4.5.7.8 1.1-.9 2.1-1.1 4.3-.4 6.3 1.1 3.2 4.1 5.5 7.6 5.5s6.5-2.3 7.6-5.5c.7-2 .5-4.2-.4-6.3 1.6-2.5.8-5.7-1.5-7-1.2-.7-2.9-.6-4.3.4" />
+                  </svg>
+                </div>
+                <div className="flex flex-col -space-y-1">
+                  <span className="text-[10px] font-black text-white group-hover:text-orange-500 transition-colors">
+                    {user.user_metadata.streak_count || 1}
+                  </span>
+                  <span className="text-[7px] font-bold text-gray-500 uppercase tracking-widest">Streak</span>
+                </div>
+              </div>
+
               <Link href={`/profile/${user.user_metadata.user_name || user.id}`} className="group relative">
                 <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver group-hover:border-white/40 group-hover:silver-glow transition-all duration-500">
                   {user.user_metadata.avatar_url ? (
