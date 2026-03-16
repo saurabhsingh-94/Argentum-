@@ -5,13 +5,14 @@ import UpvoteButton from '@/components/UpvoteButton'
 import { Calendar, Hash, ShieldCheck, Tag, User } from 'lucide-react'
 import Link from 'next/link'
 
-export default async function PostDetail({ params }: { params: { id: string } }) {
+export default async function PostDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   
   const { data: post, error } = await supabase
     .from('posts')
     .select('*, users(*)')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (error || !post) {

@@ -5,7 +5,8 @@ import EmptyState from '@/components/EmptyState'
 import { Github, Globe, Award, Flame, Zap, Twitter } from 'lucide-react'
 import Link from 'next/link'
 
-export default async function ProfilePage({ params }: { params: { username: string } }) {
+export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params
   const supabase = await createClient()
   
   if (!supabase) {
@@ -16,7 +17,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('*')
-    .eq('username', params.username.toLowerCase())
+    .eq('username', username.toLowerCase())
     .single()
 
   if (profileError || !profile) {
