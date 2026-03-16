@@ -1,0 +1,75 @@
+"use client"
+
+import { ArrowBigUp } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
+
+export default function UpvoteButton({ 
+  postId, 
+  initialUpvotes,
+  isUpvoted: initialIsUpvoted 
+}: { 
+  postId: string, 
+  initialUpvotes: number,
+  isUpvoted?: boolean
+}) {
+  const supabase = createClient()
+  const [upvotes, setUpvotes] = useState(initialUpvotes)
+  const [isUpvoted, setIsUpvoted] = useState(initialIsUpvoted || false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleUpvote = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        alert("Please sign in to upvote")
+        return
+    }
+
+    setIsLoading(true)
+    const newIsUpvoted = !isUpvoted
+    const newUpvotes = newIsUpvoted ? upvotes + 1 : upvotes - 1
+
+    // Optimistic UI
+    setIsUpvoted(newIsUpvoted)
+    setUpvotes(newUpvotes)
+
+    try {
+      if (newIsUpvoted) {
+        await supabase.rpc('increment_upvotes', { post_id_input: postId })
+      } else {
+        await supabase.rpc('decrement_upvotes', { post_id_input: postId })
+      }
+    } catch (error) {
+      console.error('Error upvoting:', error)
+      // Rollback
+      setIsUpvoted(!newIsUpvoted)
+      setUpvotes(upvotes)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleUpvote}
+      disabled={isLoading}
+      className={`
+        flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-300
+        ${isUpvoted 
+          ? 'bg-white/10 text-white silver-metallic ring-1 ring-white/30' 
+          : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-silver'
+        }
+        active:scale-90 disabled:opacity-50
+      `}
+    >
+      <ArrowBigUp 
+        size={24} 
+        className={`transition-all ${isUpvoted ? 'fill-current' : ''}`} 
+      />
+      <span className="text-xs font-black font-mono leading-none">{upvotes}</span>
+    </button>
+  )
+}

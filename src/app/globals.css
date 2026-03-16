@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #050505;
+  --color-card: #0d0d0d;
+  --color-silver: #C0C0C0;
+  --color-silver-bright: #f3f4f6;
+  --color-accent: #C0C0C0;
+  --color-accent-blue: #2563eb;
+  
+  --shadow-glow: 0 0 20px 2px rgba(192, 192, 192, 0.2);
+  --shadow-blue-glow: 0 0 25px 2px rgba(37, 99, 235, 0.15);
+  --shadow-silver: 0 0 15px 2px rgba(192, 192, 192, 0.2);
+  
+  --radius-lg: 0.85rem;
+  --radius-md: calc(0.85rem - 2px);
+  --radius-sm: calc(0.85rem - 4px);
+}
+
+:root {
+  --background: 5 5 5;
+  --foreground: 255 255 255;
+  --radius: 0.85rem;
+  --silver-gradient: linear-gradient(135deg, #f3f4f6 0%, #C0C0C0 50%, #9ca3af 100%);
+}
+
+body {
+  background-color: #050505;
+  color: #ffffff;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Atmospheric Scientific Background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: center center;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Blueprint Annotations */
+body::after {
+  content: "[47:Ag] (107.868) // ARGENTUM_OS_v1.0.4 CORE_SYNC:ACTIVE GRID_v2.0 [X:47, Y:107]";
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-family: monospace;
+  font-size: 8px;
+  font-weight: 900;
+  color: rgba(192, 192, 192, 0.1);
+  letter-spacing: 0.2em;
+  pointer-events: none;
+  z-index: 50;
+  writing-mode: vertical-rl;
+}
+
+#background-glow {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 140vw;
+  height: 140vh;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.03) 0%, rgba(192, 192, 192, 0.02) 30%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+@layer base {
+  * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.glass-card {
+  background-color: rgba(13, 13, 13, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(192, 192, 192, 0.1);
+  border-radius: 0.85rem;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
+  background-size: 200% 100%;
+  pointer-events: none;
+  transition: background-position 0s;
+}
+
+.glass-card:hover::after {
+  background-position: -200% 0;
+  transition: background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(192, 192, 192, 0.4) !important;
+  box-shadow: 0 0 40px -10px rgba(192, 192, 192, 0.15);
+  transform: translateY(-4px) scale(1.005);
+}
+
+.silver-metallic {
+  background: var(--silver-gradient);
+  color: #000 !important;
+  font-weight: 800;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.silver-glow {
+  box-shadow: 0 0 25px 2px rgba(192, 192, 192, 0.2);
+}
+
+.blue-glow {
+  box-shadow: 0 0 25px 2px rgba(37, 99, 235, 0.15);
+}
+
+.silver-glow-text {
+  background: linear-gradient(to bottom, #ffffff, #888888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(192, 192, 192, 0.4));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(192, 192, 192, 0.1);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C0C0C0;
+}
+
+/* Animations */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
