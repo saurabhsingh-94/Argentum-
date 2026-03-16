@@ -8,6 +8,7 @@ import { Github, Plus, LogIn, ChevronDown, Search } from 'lucide-react'
 export default function Navbar({ onSearchClick }: { onSearchClick: () => void }) {
   const supabase = createClient()
   const [user, setUser] = useState<any>(null)
+  const [profileUsername, setProfileUsername] = useState<string | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {
@@ -15,12 +16,29 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
 
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      if (user) {
+        setUser(user)
+        // Fetch profile to get the correct username
+        const { data: profile } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          setProfileUsername(profile.username)
+        }
+      }
     }
     getUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        getUser() // Re-fetch profile on auth change
+      } else {
+        setProfileUsername(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -94,7 +112,7 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                 </div>
               </div>
 
-              <Link href={`/profile/${user.user_metadata.user_name || user.id}`} className="group relative">
+              <Link href={profileUsername ? `/profile/${profileUsername}` : '#'} className="group relative">
                 <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver group-hover:border-white/40 group-hover:silver-glow transition-all duration-500">
                   {user.user_metadata.avatar_url ? (
                     <img src={user.user_metadata.avatar_url} alt="avatar" className="w-full h-full object-cover" />

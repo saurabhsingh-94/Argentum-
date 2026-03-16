@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import PostCard from '@/components/PostCard'
 import EmptyState from '@/components/EmptyState'
-import { Github, Globe, Award, Flame, Zap } from 'lucide-react'
+import { Github, Globe, Award, Flame, Zap, Twitter } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
@@ -72,6 +72,26 @@ export default async function ProfilePage({ params }: { params: { username: stri
               >
                 <Github size={14} />
                 <span>{profile.github_username}</span>
+              </Link>
+            )}
+            {profile.twitter_username && (
+              <Link 
+                href={`https://twitter.com/${profile.twitter_username.replace('@', '')}`}
+                target="_blank"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-[#111] text-xs text-gray-400 hover:text-white transition-colors"
+              >
+                <Twitter size={14} className="text-[#1DA1F2]" />
+                <span>{profile.twitter_username}</span>
+              </Link>
+            )}
+            {profile.website_url && (
+              <Link 
+                href={profile.website_url.startsWith('http') ? profile.website_url : `https://${profile.website_url}`}
+                target="_blank"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 bg-[#111] text-xs text-gray-400 hover:text-white transition-colors"
+              >
+                <Globe size={14} className="text-green-500" />
+                <span>Website</span>
               </Link>
             )}
             {isOwner && (

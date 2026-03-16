@@ -17,6 +17,8 @@ export interface Database {
           avatar_url: string | null
           bio: string | null
           github_username: string | null
+          twitter_username: string | null
+          website_url: string | null
           hbar_wallet: string | null
           streak_count: number
           currently_building: string | null
@@ -29,6 +31,8 @@ export interface Database {
           avatar_url?: string | null
           bio?: string | null
           github_username?: string | null
+          twitter_username?: string | null
+          website_url?: string | null
           hbar_wallet?: string | null
           streak_count?: number
           currently_building?: string | null
@@ -41,6 +45,8 @@ export interface Database {
           avatar_url?: string | null
           bio?: string | null
           github_username?: string | null
+          twitter_username?: string | null
+          website_url?: string | null
           hbar_wallet?: string | null
           streak_count?: number
           currently_building?: string | null

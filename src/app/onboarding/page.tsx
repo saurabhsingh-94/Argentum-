@@ -117,7 +117,8 @@ export default function Onboarding() {
                 type="text"
                 required
                 value={username}
-                onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                maxLength={30}
                 className={`w-full bg-[#1a1a1a] border rounded-lg px-4 py-3 text-sm focus:outline-none transition-all ${
                   usernameStatus === 'available' ? 'border-green-500/50 focus:border-green-500' : 
                   usernameStatus === 'taken' ? 'border-red-500/50 focus:border-red-500' : 
@@ -131,7 +132,12 @@ export default function Onboarding() {
                 {usernameStatus === 'taken' && <AlertCircle className="text-red-500" size={16} />}
               </div>
             </div>
-            {usernameMessage && (
+            {username.length > 0 && username.length < 3 && (
+              <span className="text-[10px] font-bold uppercase tracking-wider ml-1 text-orange-500">
+                Minimum 3 characters required
+              </span>
+            )}
+            {usernameMessage && username.length >= 3 && (
               <span className={`text-[10px] font-bold uppercase tracking-wider ml-1 ${usernameStatus === 'available' ? 'text-green-500' : 'text-red-500'}`}>
                 {usernameMessage}
               </span>
