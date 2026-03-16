@@ -1,66 +1,55 @@
-# 🧪 Argentum [Ag]
+# Argentum [Ag]
 ### *Build in public. Prove it forever.*
 
-**Argentum** is a laboratory-grade social protocol for developers and builders to document their progress, verify their shipping logs on-chain, and build their legacy in public. Think of it as a "Scientific Twitter for Devs."
+**Argentum** is a social platform for developers to share what they are currently building. It's a "Twitter for Devs" where builders can ship quick logs of their progress and have their contributions saved as proof of work.
 
 ---
 
-## ✨ Key Features
+## 🚀 Purpose
+The goal of Argentum is to provide a dedicated space for builders to upload and talk about their projects. It's built for developers who want to share their journey and for people who want to see what's being made in real-time.
 
-- **Laboratory Visual Identity**: A high-fidelity Silver & Black (Argentum) aesthetic with deep blue atmospheric glows and scientific "blueprint" grid annotations.
-- **Scientific BootLoader**: Interactive intro animation featuring Euler's Identity, Physics constants, and the Atomic metadata of Silver.
-- **Ship It Logic**: A dedicated "Quick Ship" card on the feed designed for real-time developer updates—modeled after the social flow of modern dev communities.
-- **3D Interactive Filters**: Neo-skeuomorphic 3D category blocks with 0px horizontal variance and pure vertical "pop" motion.
-- **On-Chain Ready**: Integrated content hashing (SHA-256) for future immutable verification on the Hedera Hashgraph protocol.
-- **Full-Stack Stack**: Next.js 14 (App Router), TypeScript, Tailwind CSS, and Supabase.
+## ✨ Features
+- **Ship It Feed**: A fast, social-style feed for sharing real-time build updates.
+- **Quick Ship Card**: A streamlined "What are you shipping?" input for rapid logs.
+- **Premium Silver UI**: A high-end Silver & Black aesthetic (Argentum) for a professional look.
+- **Build Streaks**: Gamified shipping counters to keep builders active and motivated.
+- **Category Filters**: Easily browse builds across Web3, AI, DevTools, and more.
+- **Auth Integrated**: Secure login via GitHub and Google.
 
 ---
 
 ## 🛠️ Tech Stack
-
 - **Framework**: [Next.js 14](https://nextjs.org/)
 - **Database & Auth**: [Supabase](https://supabase.com/)
-- **Styling**: [Tailwind CSS 4.0](https://tailwindcss.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Editor**: [@uiw/react-md-editor](https://github.com/uiwjs/react-md-editor)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **State Management**: [React Hooks](https://react.dev/)
 
 ---
 
-## 🚀 Getting Started
+## 🏁 Getting Started
 
 ### Prerequisites
 - Node.js 18+
-- A Supabase Project
+- Supabase account
 
 ### Installation
-1. Clone the repository:
+1. Clone the repo:
    ```bash
-   git clone https://github.com/yourusername/argentum.git
+   git clone https://github.com/saurabhsingh-98/Argentum-.git
    ```
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Set up environment variables in `.env`:
+3. Setup `.env`:
    ```bash
-   NEXT_PUBLIC_SUPABASE_URL=your_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
    ```
-4. Run the development server:
+4. Start development:
    ```bash
    npm run dev
    ```
 
 ---
-
-## 🔬 Scientific Annotations
-
-The platform utilizes a "Blueprint Grid" system with coordinate markers `[X:47, Y:107]` representing the atomic number and mass of Silver (Argentum). Every component is engineered for visual stability and professional depth.
-
----
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-*Argentum - The source of truth for creators.*
+*Argentum - The social protocol for builders.*
