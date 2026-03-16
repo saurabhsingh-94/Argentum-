@@ -37,7 +37,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   // Fetch published posts for this user
   const { data: posts } = await supabase
     .from('posts')
-    .select('*, users(*)')
+    .select('*, users(id, username, display_name, avatar_url, bio, currently_building, x_handle)')
     .eq('user_id', profile.id)
     .eq('status', 'published')
     .order('created_at', { ascending: false })

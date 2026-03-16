@@ -37,7 +37,7 @@ export default function Settings() {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('*')
+        .select('id, username, display_name, avatar_url, bio, currently_building, github_username, x_handle, website_url')
         .eq('id', user.id)
         .single()
 
