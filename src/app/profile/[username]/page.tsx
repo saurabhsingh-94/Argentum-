@@ -85,7 +85,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
         <div className="grid grid-cols-3 gap-2 w-full md:w-auto">
             <StatsCard label="Posts" value={posts?.length || 0} icon={<Zap size={12} className="text-accent" />} />
             <StatsCard label="Streak" value={profile.streak_count || 0} icon={<Flame size={12} className="text-orange-500" />} />
-            <StatsCard label="Verified" value={posts?.filter(p => p.verification_status === 'verified').length || 0} icon={<Award size={12} className="text-blue-500" />} />
+            <StatsCard label="Verified" value={posts?.filter((p: any) => p.verification_status === 'verified').length || 0} icon={<Award size={12} className="text-blue-500" />} />
         </div>
       </div>
 
@@ -103,7 +103,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
         
         {posts && posts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
+            {posts.map((post: any) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
