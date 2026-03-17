@@ -39,6 +39,23 @@ export default function UpvoteButton({
     try {
       if (newIsUpvoted) {
         await supabase.rpc('increment_upvotes', { post_id_input: postId })
+        
+        // Fetch post details to notify owner
+        const { data: post } = await supabase
+          .from('posts')
+          .select('user_id, title')
+          .eq('id', postId)
+          .single()
+
+        if (post && post.user_id !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: post.user_id,
+            from_user_id: user.id,
+            type: 'upvote',
+            content: `${user.user_metadata?.display_name || user.user_metadata?.username || 'Someone'} upvoted your post "${post.title}"`,
+            link: `/post/${postId}`
+          })
+        }
       } else {
         await supabase.rpc('decrement_upvotes', { post_id_input: postId })
       }

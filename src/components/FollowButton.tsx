@@ -54,6 +54,21 @@ export default function FollowButton({ followingId, initialIsFollowing, onCountC
           })
         
         if (error) throw error
+
+        // Notify the followed user
+        const { data: follower } = await supabase
+          .from('users')
+          .select('display_name, username')
+          .eq('id', currentUserId)
+          .single()
+
+        await supabase.from('notifications').insert({
+          user_id: followingId,
+          from_user_id: currentUserId,
+          type: 'follow',
+          content: `${follower?.display_name || follower?.username || 'Someone'} started following you`,
+          link: `/profile/${follower?.username}`
+        })
       }
     } catch (error) {
       console.error('Follow error:', error)

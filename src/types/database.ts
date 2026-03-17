@@ -230,6 +230,38 @@ export interface Database {
           created_at?: string
         }
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          from_user_id: string
+          type: 'upvote' | 'comment' | 'follow' | 'message' | 'verified'
+          content: string
+          link: string | null
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          from_user_id: string
+          type: 'upvote' | 'comment' | 'follow' | 'message' | 'verified'
+          content: string
+          link?: string | null
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          from_user_id?: string
+          type?: 'upvote' | 'comment' | 'follow' | 'message' | 'verified'
+          content?: string
+          link?: string | null
+          is_read?: boolean
+          created_at?: string
+        }
+      }
     }
     Functions: {
       increment_upvotes: {
