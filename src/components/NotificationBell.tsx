@@ -42,6 +42,14 @@ export default function NotificationBell() {
           },
           (payload: any) => {
             setUnreadCount(prev => prev + 1)
+            
+            // Check for mute status if it's a message
+            if (payload.new.type === 'message' && payload.new.link) {
+              const convId = payload.new.link.split('/').pop()
+              const isMuted = localStorage.getItem(`muted_${convId}`) === 'true'
+              if (isMuted) return
+            }
+
             showToast(payload.new)
           }
         )
