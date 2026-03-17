@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, AtSign, FileText, Rocket, CheckCircle2, AlertCircle, Loader2, ArrowRight, Github, Twitter, Instagram, Globe } from 'lucide-react'
+import { User, AtSign, FileText, Rocket, CheckCircle2, AlertCircle, Loader2, ArrowRight, Github, Twitter, Instagram, Globe, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Onboarding() {
@@ -16,6 +16,8 @@ export default function Onboarding() {
   const [twitterUsername, setTwitterUsername] = useState('')
   const [instagramUsername, setInstagramUsername] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
+  const [skills, setSkills] = useState('')
+  const [isPublic, setIsPublic] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
   const [usernameMessage, setUsernameMessage] = useState('')
@@ -114,6 +116,8 @@ export default function Onboarding() {
         twitter_username: twitterUsername || null,
         instagram_username: instagramUsername || null,
         website_url: websiteUrl || null,
+        skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
+        is_public: isPublic,
         email: user.email
       })
 
@@ -183,7 +187,7 @@ export default function Onboarding() {
                     <AnimatePresence mode="wait">
                       {usernameStatus === 'checking' && (
                         <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                          <Loader2 className="animate-spin text-gray-600" size={18} />
+                          <Loader2 className="animate-spin" size={18} />
                         </motion.div>
                       )}
                       {usernameStatus === 'available' && (
@@ -199,15 +203,6 @@ export default function Onboarding() {
                     </AnimatePresence>
                   </div>
                 </div>
-                {usernameMessage && (
-                  <motion.span 
-                    initial={{ opacity: 0, x: -5 }} 
-                    animate={{ opacity: 1, x: 0 }}
-                    className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${usernameStatus === 'available' ? 'text-green-500' : 'text-red-500'}`}
-                  >
-                    {usernameMessage}
-                  </motion.span>
-                )}
               </div>
 
               <div className="flex flex-col gap-3">
@@ -229,23 +224,23 @@ export default function Onboarding() {
             {/* Currently Building & Website */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Building <span className="text-gray-700">(Optional)</span></label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Currently Building</label>
                 <div className="relative group">
-                  <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-silver transition-colors" size={16} />
+                  <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
                   <input
                     type="text"
                     value={currentlyBuilding}
                     onChange={(e) => setCurrentlyBuilding(e.target.value)}
                     className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                    placeholder="Argentum..."
+                    placeholder="Project Alpha..."
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Website <span className="text-gray-700">(Optional)</span></label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Website URL</label>
                 <div className="relative group">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-silver transition-colors" size={16} />
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
                   <input
                     type="text"
                     value={websiteUrl}
@@ -301,15 +296,66 @@ export default function Onboarding() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Bio <span className="text-gray-700">(Optional)</span></label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Bio</label>
               <div className="relative group">
                 <FileText className="absolute left-4 top-5 text-gray-600 group-focus-within:text-silver transition-colors" size={16} />
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all min-h-[100px] resize-none"
-                  placeholder="Shipping daily..."
+                  placeholder="Tell your story..."
                 />
+              </div>
+            </div>
+
+            {/* Skills */}
+            <div className="flex flex-col gap-3">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Skills <span className="text-gray-700">(Comma separated)</span></label>
+              <div className="relative group">
+                <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                <input
+                  type="text"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
+                  placeholder="Rust, React, Solidity..."
+                />
+              </div>
+            </div>
+
+            {/* Visibility */}
+            <div className="flex flex-col gap-4 pt-4 border-t border-white/5">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1">Profile Visibility</label>
+              <div className="grid grid-cols-2 gap-6">
+                <div 
+                  onClick={() => setIsPublic(true)}
+                  className={`cursor-pointer p-6 rounded-2xl border transition-all ${
+                    isPublic 
+                      ? 'bg-green-500/5 border-green-500 shadow-glow' 
+                      : 'bg-white/5 border-white/5 hover:border-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe size={18} className={isPublic ? 'text-green-500' : 'text-gray-400'} />
+                    <span className={`text-sm font-bold ${isPublic ? 'text-green-500' : 'text-white'}`}>Public</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">Anyone can view your profile and builds.</p>
+                </div>
+
+                <div 
+                  onClick={() => setIsPublic(false)}
+                  className={`cursor-pointer p-6 rounded-2xl border transition-all ${
+                    !isPublic 
+                      ? 'bg-green-500/5 border-green-500 shadow-glow' 
+                      : 'bg-white/5 border-white/5 hover:border-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <Lock size={18} className={!isPublic ? 'text-green-500' : 'text-gray-400'} />
+                    <span className={`text-sm font-bold ${!isPublic ? 'text-green-500' : 'text-white'}`}>Private</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">Only you can see your profile.</p>
+                </div>
               </div>
             </div>
 
@@ -317,8 +363,8 @@ export default function Onboarding() {
               type="submit"
               disabled={loading || usernameStatus !== 'available'}
               className={`
-                w-full group relative flex items-center justify-center gap-3 font-black py-5 rounded-2xl transition-all shadow-xl active:scale-[0.98] disabled:opacity-30 disabled:grayscale
-                ${usernameStatus === 'available' ? 'silver-metallic shadow-glow' : 'bg-white/5 text-gray-500 border border-white/5'}
+                w-full group relative flex items-center justify-center gap-3 font-black py-5 rounded-2xl transition-all shadow-xl active:scale-[0.98] disabled:opacity-30
+                ${usernameStatus === 'available' ? 'silver-metallic shadow-glow' : 'bg-white/5 text-gray-500 border border-white/10'}
               `}
             >
               {loading ? (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, AtSign, FileText, Rocket, Github, Twitter, Globe, Save, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { User, AtSign, FileText, Rocket, Github, Twitter, Globe, Lock, Save, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Settings() {
@@ -19,6 +19,8 @@ export default function Settings() {
   const [githubUsername, setGithubUsername] = useState('')
   const [twitterUsername, setTwitterUsername] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
+  const [skills, setSkills] = useState('')
+  const [isPublic, setIsPublic] = useState(true)
   
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
@@ -37,7 +39,7 @@ export default function Settings() {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, bio, currently_building, github_username, x_handle, website_url')
+        .select('id, username, display_name, avatar_url, bio, currently_building, github_username, twitter_username, website_url, skills, is_public')
         .eq('id', user.id)
         .single()
 
@@ -47,8 +49,10 @@ export default function Settings() {
         setBio(profile.bio || '')
         setCurrentlyBuilding(profile.currently_building || '')
         setGithubUsername(profile.github_username || '')
-        setTwitterUsername(profile.x_handle || '')
+        setTwitterUsername(profile.twitter_username || '')
         setWebsiteUrl(profile.website_url || '')
+        setSkills(profile.skills?.join(', ') || '')
+        setIsPublic(profile.is_public !== false)
       }
       setLoading(false)
     }
@@ -107,8 +111,10 @@ export default function Settings() {
           bio: bio || null,
           currently_building: currentlyBuilding || null,
           github_username: githubUsername || null,
-          x_handle: twitterUsername || null,
+          twitter_username: twitterUsername || null,
           website_url: websiteUrl || null,
+          skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
+          is_public: isPublic,
         })
         .eq('id', user.id)
 
@@ -262,6 +268,60 @@ export default function Settings() {
                   className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
                   placeholder="https://yourwebsite.com"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Skills Section */}
+          <div className="glass-card p-8 flex flex-col gap-6">
+            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Specialization</h2>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Skills <span className="text-gray-700 font-normal lowercase">(Comma separated)</span></label>
+              <div className="relative">
+                <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
+                <input
+                  type="text"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all font-mono"
+                  placeholder="React, Solidity, Rust..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Visibility Section */}
+          <div className="glass-card p-8 flex flex-col gap-6">
+            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Privacy</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div 
+                onClick={() => setIsPublic(true)}
+                className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+                  isPublic 
+                    ? 'bg-green-500/5 border-green-500 shadow-glow' 
+                    : 'bg-white/5 border-white/5 hover:border-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Globe size={18} className={isPublic ? 'text-green-500' : 'text-gray-400'} />
+                  <span className={`text-sm font-bold ${isPublic ? 'text-green-500' : 'text-white'}`}>Public</span>
+                </div>
+                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-tighter">Anyone can view your profile and builds</p>
+              </div>
+
+              <div 
+                onClick={() => setIsPublic(false)}
+                className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+                  !isPublic 
+                    ? 'bg-green-500/5 border-green-500 shadow-glow' 
+                    : 'bg-white/5 border-white/5 hover:border-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Lock size={18} className={!isPublic ? 'text-green-500' : 'text-gray-400'} />
+                  <span className={`text-sm font-bold ${!isPublic ? 'text-green-500' : 'text-white'}`}>Private</span>
+                </div>
+                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-tighter">Only you can see your profile</p>
               </div>
             </div>
           </div>
