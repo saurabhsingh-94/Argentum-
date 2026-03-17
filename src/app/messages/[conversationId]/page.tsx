@@ -40,11 +40,15 @@ import {
   Search,
   Zap,
   Frown,
-  Flame
+  Flame,
+  Settings,
+  Users,
+  LogOut
 } from 'lucide-react'
 import Link from 'next/link'
 import { decryptMessage, encryptMessage, getStoredSecretKey, initializeEncryption } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
+import AccountSwitcher from '@/components/AccountSwitcher'
 
 export default function ChatPage({ params }: { params: Promise<{ conversationId: string }> }) {
   const { conversationId } = use(params)
@@ -71,6 +75,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [uploadProgress, setUploadProgress] = useState(0)
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<any>(null)
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -428,9 +433,41 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
              <button className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
                 <Search size={20} />
              </button>
-             <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
-                <MoreVertical size={20} />
-             </button>
+             <div className="relative">
+                 <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
+                    <MoreVertical size={20} />
+                 </button>
+
+                 <AnimatePresence>
+                    {showMenu && (
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-0 mt-2 w-56 p-2 bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-3xl z-[100]"
+                        >
+                            <button onClick={() => { setIsMuted(!isMuted); localStorage.setItem(`muted_${conversationId}`, (!isMuted).toString()); setShowMenu(false); }} className="ctx-btn">
+                                {isMuted ? <Volume2 size={16} /> : <VolumeX size={16} />} 
+                                {isMuted ? 'Unmute' : 'Mute Notifications'}
+                            </button>
+                            <button onClick={() => { setShowProfilePanel(true); setShowMenu(false); }} className="ctx-btn">
+                                <UserCircle size={16} /> View Profile
+                            </button>
+                            <div className="h-px bg-white/5 my-1" />
+                            <Link href="/settings" className="ctx-btn">
+                                <Settings size={16} /> Site Settings
+                            </Link>
+                            <button onClick={() => { setShowAccountSwitcher(true); setShowMenu(false); }} className="ctx-btn">
+                                <Users size={16} /> Switch Account
+                            </button>
+                            <div className="h-px bg-white/5 my-1" />
+                            <button onClick={() => { setShowMenu(false); router.push('/messages'); }} className="ctx-btn text-red-500/80">
+                                <Ban size={16} /> Block User
+                            </button>
+                        </motion.div>
+                    )}
+                 </AnimatePresence>
+             </div>
           </div>
         </motion.div>
 
@@ -697,6 +734,8 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
               </motion.div>
           )}
       </AnimatePresence>
+
+      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

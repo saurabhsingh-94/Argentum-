@@ -161,8 +161,11 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                 </div>
               </div>
 
-              <div className="relative" onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}>
-                <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver hover:border-white/40 hover:silver-glow transition-all duration-500 cursor-pointer">
+              <div className="relative">
+                <div 
+                  className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver hover:border-white/40 hover:silver-glow transition-all duration-500 cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
+                >
                   {!profile && user ? (
                     <Loader2 size={16} className="animate-spin text-silver/40" />
                   ) : profile?.avatar_url ? (
@@ -178,6 +181,7 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        onClick={(e) => e.stopPropagation()}
                         className="absolute right-0 mt-3 w-56 p-2 bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-3xl z-[100]"
                     >
                         <div className="p-3 border-b border-white/5 mb-1 px-4">

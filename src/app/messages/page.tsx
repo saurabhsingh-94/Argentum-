@@ -7,6 +7,8 @@ import { MessageCircle, Search, Loader2, Plus, Lock, AtSign } from 'lucide-react
 import Link from 'next/link'
 import { decryptMessage, getStoredSecretKey, initializeEncryption } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
+import AccountSwitcher from '@/components/AccountSwitcher'
+import { Settings, Users, LogOut, User } from 'lucide-react'
 
 export default function MessagesPage() {
   const supabase = createClient()
@@ -17,6 +19,8 @@ export default function MessagesPage() {
   const [user, setUser] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [encryptionStatus, setEncryptionStatus] = useState<string>('loading')
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,10 +29,12 @@ export default function MessagesPage() {
         router.push('/auth/login')
         return
       }
-      setUser(user)
-
-      const status = await initializeEncryption()
-      setEncryptionStatus(status?.status || 'ready')
+      const { data: prof } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      setProfile(prof)
 
       await fetchConversations(user.id)
     }
@@ -183,7 +189,39 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
+
+        {/* Profile Footer */}
+        {user && (
+           <div className="p-4 border-t border-white/5 bg-[#0d0d0d]/50 backdrop-blur-xl">
+             <div className="flex items-center gap-3 mb-4 px-2">
+               <div className="w-9 h-9 rounded-xl border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center text-silver font-black text-xs">
+                 {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" /> : user.email?.[0].toUpperCase()}
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="text-xs font-bold truncate text-white">{profile?.display_name || profile?.username || user.email}</p>
+                 <p className="text-[10px] text-gray-600 font-mono font-bold truncate">@{profile?.username || 'user'}</p>
+               </div>
+             </div>
+             
+             <div className="grid grid-cols-2 gap-2">
+                <Link 
+                  href="/settings" 
+                  className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 transition-all font-bold"
+                >
+                  <Settings size={14} /> Settings
+                </Link>
+                <button 
+                  onClick={() => setShowAccountSwitcher(true)}
+                  className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 transition-all font-bold"
+                >
+                  <Users size={14} /> Switch
+                </button>
+             </div>
+           </div>
+        )}
       </motion.div>
+
+      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
 
       {/* Right Panel: Placeholder for Chat Window (Visible on desktop) */}
       <motion.div 
