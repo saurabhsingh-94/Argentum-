@@ -146,32 +146,23 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
           async (payload: any) => {
             if (payload.eventType === 'INSERT') {
-                const secretKey = getStoredSecretKey()
-                let content = payload.new.content
-                let decrypted = content
-
-                if (!content.startsWith('[IMAGE]:')) {
-                    const isOwn = payload.new.sender_id === user.id
-                    const otherProfile = conv.participant_1 === user.id ? conv.participant_2_profile : conv.participant_1_profile
-                    const senderProfile = conv.participant_1 === payload.new.sender_id ? conv.participant_1_profile : conv.participant_2_profile
-                    const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
-                    
-                    if (secretKey) {
-                        decrypted = decryptMessage(content, decryptionKey, secretKey) || "Encrypted message"
-                    } else {
-                        decrypted = "Encrypted message"
-                    }
+                const processed = processMessage(payload.new, conv, user.id)
+                if (processed) {
+                  setMessages((prev: any[]) => [...prev, processed])
+                  setTimeout(() => scrollToBottom(), 50)
                 }
-                
-                setMessages((prev: any[]) => [...prev, { ...payload.new, decryptedContent: decrypted }])
-                setTimeout(() => scrollToBottom(), 50)
 
                 // Auto mark as read if on screen
                 if (payload.new.sender_id !== user.id) {
                     await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
                 }
             } else if (payload.eventType === 'UPDATE') {
-                setMessages((prev: any[]) => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m))
+                const processed = processMessage(payload.new, conv, user.id)
+                if (processed) {
+                  setMessages((prev: any[]) => prev.map(m => m.id === payload.new.id ? { ...m, ...processed } : m))
+                } else {
+                  setMessages((prev: any[]) => prev.filter(m => m.id !== payload.new.id))
+                }
             } else if (payload.eventType === 'DELETE') {
                 setMessages((prev: any[]) => prev.filter(m => m.id !== payload.old.id))
             }
@@ -228,6 +219,32 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       }))
   }
 
+  const processMessage = (msg: any, convData: any, userId: string) => {
+    if (msg.deleted_for?.includes(userId)) return null
+    
+    const secretKey = getStoredSecretKey()
+    let decrypted = msg.content
+    
+    if (!msg.content.startsWith('[IMAGE]:')) {
+        const isOwn = msg.sender_id === userId
+        const otherProfile = convData.participant_1 === userId ? convData.participant_2_profile : convData.participant_1_profile
+        const senderProfile = convData.participant_1 === msg.sender_id ? convData.participant_1_profile : convData.participant_2_profile
+        const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
+        
+        if (secretKey) {
+          decrypted = decryptMessage(msg.content, decryptionKey, secretKey) || "Encrypted message"
+        } else {
+          decrypted = "Encrypted message"
+        }
+    }
+
+    return {
+      ...msg,
+      decryptedContent: decrypted,
+      expired: msg.expires_at && new Date(msg.expires_at) < new Date()
+    }
+  }
+
   const fetchMessages = async (conv: any, userId: string) => {
     const { data, error } = await supabase
       .from('messages')
@@ -237,31 +254,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
     if (error) return
 
-    const secretKey = getStoredSecretKey()
-    const processedMessages = data.map((msg: any) => {
-      if (msg.deleted_for?.includes(userId)) return null
-      
-      let decrypted = msg.content
-      if (!msg.content.startsWith('[IMAGE]:')) {
-          const isOwn = msg.sender_id === userId
-          const otherProfile = conv.participant_1 === userId ? conv.participant_2_profile : conv.participant_1_profile
-          const senderProfile = conv.participant_1 === msg.sender_id ? conv.participant_1_profile : conv.participant_2_profile
-          const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
-          
-          if (secretKey) {
-            decrypted = decryptMessage(msg.content, decryptionKey, secretKey) || "Encrypted message"
-          } else {
-            decrypted = "Encrypted message"
-          }
-      }
-
-      return {
-        ...msg,
-        decryptedContent: decrypted,
-        expired: msg.expires_at && new Date(msg.expires_at) < new Date()
-      }
-    }).filter(Boolean)
-
+    const processedMessages = data.map((msg: any) => processMessage(msg, conv, userId)).filter(Boolean)
     setMessages(processedMessages)
   }
 
