@@ -152,7 +152,6 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                   setTimeout(() => scrollToBottom(), 50)
                 }
 
-                // Auto mark as read if on screen
                 if (payload.new.sender_id !== user.id) {
                     await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
                 }
@@ -184,12 +183,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         )
         .subscribe()
 
-      return () => {
-        supabase.removeChannel(channel)
-      }
+      return channel
     }
 
-    setup()
+    let channel: any
+    setup().then(c => { channel = c })
+
+    // ... existing interval logic ...
 
     // Expiry check interval
     const interval = setInterval(() => {
@@ -198,15 +198,18 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
-      setContextMenu(null)
+      if (!isEditingId) setContextMenu(null)
       setBgContextMenu(null)
     }
     document.addEventListener('click', handleClickOutside)
     return () => {
         document.removeEventListener('click', handleClickOutside)
         clearInterval(interval)
+        if (channel) supabase.removeChannel(channel)
     }
   }, [conversationId])
+
+  const isEditingId = editingId
 
   const checkExpiries = () => {
       const now = new Date()
@@ -381,6 +384,23 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           await supabase.from('messages').update({ deleted_for: deletedFor }).eq('id', msg.id)
       }
       setContextMenu(null)
+  }
+
+  const setExpiry = async (msg: any, time: string) => {
+      const now = new Date()
+      let expiresAt = null
+      if (time === 'After viewing') expiresAt = now.toISOString()
+      else if (time === '1 Day') now.setDate(now.getDate() + 1), expiresAt = now.toISOString()
+      else if (time === '1 Week') now.setDate(now.getDate() + 7), expiresAt = now.toISOString()
+      else if (time === 'Lifetime') expiresAt = null
+      
+      await supabase.from('messages').update({ expires_at: expiresAt }).eq('id', msg.id)
+      setContextMenu(null)
+  }
+
+  const toggleConvSetting = async (key: string, value: any) => {
+      await supabase.from('conversations').update({ [key]: value }).eq('id', conversationId)
+      setBgContextMenu(null)
   }
 
   const clearChatHistory = async () => {
@@ -734,7 +754,9 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                             <Clock size={16} /> Set expiry
                             <ChevronRight size={14} className="ml-auto opacity-50" />
                             <div className="hidden group-hover:block absolute left-full top-0 ml-1 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl">
-                                {['After viewing', '1 Day', '1 Week', 'Lifetime'].map(opt => <button key={opt} className="ctx-btn text-[9px]">{opt}</button>)}
+                                {['After viewing', '1 Day', '1 Week', 'Lifetime'].map(opt => (
+                                    <button key={opt} onClick={() => setExpiry(contextMenu.msg, opt)} className="ctx-btn text-[9px]">{opt}</button>
+                                ))}
                             </div>
                         </button>
                         <button onClick={() => deleteMessage(contextMenu.msg, false)} className="ctx-btn"><Trash2 size={16} /> Delete for me</button>
@@ -765,14 +787,18 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                     <VolumeX size={16} /> Mute notifications
                     <ChevronRight size={14} className="ml-auto opacity-50" />
                     <div className="hidden group-hover:block absolute left-full top-0 ml-1 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl">
-                        {['24 Hours', '1 Week', 'Always'].map(opt => <button key={opt} className="ctx-btn text-[9px]">{opt}</button>)}
+                        {['24 Hours', '1 Week', 'Always'].map(opt => (
+                            <button key={opt} onClick={() => { setIsMuted(true); localStorage.setItem(`muted_${conversationId}`, 'true'); setBgContextMenu(null); }} className="ctx-btn text-[9px]">{opt}</button>
+                        ))}
                     </div>
                 </button>
                 <button className="ctx-btn group relative">
                     <MessageCircle size={16} /> Disappearing messages
                     <ChevronRight size={14} className="ml-auto opacity-50" />
                     <div className="hidden group-hover:block absolute left-full top-0 ml-1 w-48 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl">
-                         {['Off', 'After viewing', '1 Day', '1 Week'].map(opt => <button key={opt} className="ctx-btn text-[9px]">{opt}</button>)}
+                         {['off', '24h', '7d'].map(opt => (
+                             <button key={opt} onClick={() => toggleConvSetting('disappearing_messages', opt)} className="ctx-btn text-[9px] lowercase">{opt}</button>
+                         ))}
                     </div>
                 </button>
                 <button className="ctx-btn"><Shield size={16} /> Verify encryption</button>
