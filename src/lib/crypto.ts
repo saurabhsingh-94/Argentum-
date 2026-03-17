@@ -81,6 +81,60 @@ export const decryptMessage = (
   }
 }
 
+// Derive an AES key from user's backup password using PBKDF2
+export async function deriveKeyFromPassword(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 310000, hash: 'SHA-256' } as Pbkdf2Params,
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 } as AesKeyGenParams,
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+// Encrypt private key with backup password
+export async function encryptPrivateKey(privateKey: Uint8Array, password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const aesKey = await deriveKeyFromPassword(password, salt);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv } as AesGcmParams,
+    aesKey,
+    privateKey as any
+  );
+  // Combine salt + iv + encrypted into a single Uint8Array
+  const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+  combined.set(salt);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+  
+  return encodeBase64(combined);
+}
+
+// Decrypt private key with backup password
+export async function decryptPrivateKey(encryptedData: string, password: string): Promise<Uint8Array> {
+  try {
+    const combined = decodeBase64(encryptedData);
+    const salt = combined.slice(0, 16);
+    const iv = combined.slice(16, 28);
+    const data = combined.slice(28);
+    const aesKey = await deriveKeyFromPassword(password, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv } as AesGcmParams, 
+      aesKey, 
+      data as any
+    );
+    return new Uint8Array(decrypted);
+  } catch (error) {
+    console.error('Backup decryption failed:', error);
+    throw error;
+  }
+}
+
 export const initializeEncryption = async () => {
   const supabase = createClient()
   if (!supabase) return
@@ -92,15 +146,19 @@ export const initializeEncryption = async () => {
   
   if (!secretKey) {
     // Check if user already has a public key in DB. 
-    // If they do, but we lack private key, we can't do much on this device.
     const { data: profile } = await supabase
       .from('users')
-      .select('public_key')
+      .select('public_key, encrypted_private_key')
       .eq('id', user.id)
       .single()
 
+    if (profile?.encrypted_private_key) {
+      // User has encrypted keys on Supabase, trigger recovery
+      return { status: 'needs_recovery' }
+    }
+
     if (profile?.public_key) {
-      // User has keys on another device
+      // User has keys on another device but no backup set up
       return { status: 'missing_private_key' }
     }
 

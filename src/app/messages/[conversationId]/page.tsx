@@ -55,6 +55,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import AccountSwitcher from '@/components/AccountSwitcher'
 import CameraCapture from '@/components/CameraCapture'
 import Lightbox from '@/components/Lightbox'
+import KeyBackupModal from '@/components/KeyBackupModal'
+import KeyRecoveryModal from '@/components/KeyRecoveryModal'
 
 const supabase = createClient()
 
@@ -89,6 +91,8 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
+  const [showBackupModal, setShowBackupModal] = useState(false)
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -107,8 +111,12 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       }
       setCurrentUser(user)
 
-      const status = await initializeEncryption()
+       const status = await initializeEncryption()
       setEncryptionStatus(status?.status || 'ready')
+      
+      if (status?.status === 'needs_recovery') {
+        setShowRecoveryModal(true)
+      }
 
       // Fetch conversation details with disappearing settings
       const { data: conv, error: convError } = await supabase
@@ -335,9 +343,15 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
     const content = contentOverride || newMessage
     if ((!content.trim() && !attachmentData) || sending || !otherParticipant || !conversation) return
 
-    const secretKey = getStoredSecretKey()
+     const secretKey = getStoredSecretKey()
     if (!secretKey && !content.startsWith('[IMAGE]:')) {
-      alert("Encryption keys missing.")
+      if (encryptionStatus === 'needs_recovery') {
+        setShowRecoveryModal(true)
+      } else if (encryptionStatus === 'missing_private_key') {
+        alert("This device doesn't have your encryption keys. Please set up backup on your original device.")
+      } else {
+        alert("Encryption keys missing. Please refresh or check your settings.")
+      }
       return
     }
 
@@ -371,9 +385,16 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           attachment_size: attachmentData?.size
         })
 
-      if (error) throw error
+       if (error) throw error
       setNewMessage('')
       setReplyTo(null)
+
+      // Prompt for backup after first message if not set up
+      const hasPrompted = localStorage.getItem('ag_backup_prompted') === 'true'
+      if (!hasPrompted && conversation.participant_1 === currentUser.id && messages.length === 0) {
+        setShowBackupModal(true)
+        localStorage.setItem('ag_backup_prompted', 'true')
+      }
     } finally {
       setSending(false)
     }
@@ -1036,8 +1057,26 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         imageUrl={lightboxImage} 
       />
 
-      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
+       <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
       
+      <KeyBackupModal 
+        isOpen={showBackupModal} 
+        onClose={() => setShowBackupModal(false)}
+        onSuccess={() => {
+          setShowBackupModal(false)
+          window.location.reload()
+        }}
+      />
+
+      <KeyRecoveryModal 
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        onSuccess={() => {
+          setShowRecoveryModal(false)
+          window.location.reload()
+        }}
+      />
+
       <CameraCapture 
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}

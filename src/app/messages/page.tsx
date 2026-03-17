@@ -8,7 +8,9 @@ import Link from 'next/link'
 import { decryptMessage, getStoredSecretKey, initializeEncryption } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
 import AccountSwitcher from '@/components/AccountSwitcher'
-import { Settings, Users, LogOut, User } from 'lucide-react'
+import { Settings, Users, LogOut, User, ShieldAlert, Key as KeyIcon } from 'lucide-react'
+import KeyBackupModal from '@/components/KeyBackupModal'
+import KeyRecoveryModal from '@/components/KeyRecoveryModal'
 
 const supabase = createClient()
 
@@ -22,6 +24,8 @@ export default function MessagesPage() {
   const [encryptionStatus, setEncryptionStatus] = useState<string>('loading')
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  const [showBackupModal, setShowBackupModal] = useState(false)
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,8 +35,16 @@ export default function MessagesPage() {
       }
       setUser(user)
 
-      const status = await initializeEncryption()
+       const status = await initializeEncryption()
       setEncryptionStatus(status?.status || 'ready')
+      
+      if (status?.status === 'needs_recovery') {
+        setShowRecoveryModal(true)
+      } else if (status?.status === 'initialized' && !localStorage.getItem('ag_backup_prompted')) {
+        // First time initialization, prompt backup
+        setShowBackupModal(true)
+        localStorage.setItem('ag_backup_prompted', 'true')
+      }
 
       const { data: prof } = await supabase
         .from('users')
@@ -157,6 +169,37 @@ export default function MessagesPage() {
           </div>
         </div>
 
+         {/* Backup Nag Banner */}
+        {encryptionStatus === 'ready' && !profile?.key_backup_method && (
+          <div className="p-4 mx-4 mb-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
+            <div className="flex gap-3">
+              <ShieldAlert size={16} className="text-orange-500 shrink-0" />
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">Unprotected Account</p>
+                <p className="text-[11px] text-orange-500/60 font-medium leading-relaxed">Your messages aren't backed up. You'll lose access if you lose this device.</p>
+                <button 
+                  onClick={() => setShowBackupModal(true)}
+                  className="text-[10px] font-black uppercase tracking-widest text-white hover:text-orange-500 transition-colors"
+                >
+                  Setup Argentum Shield →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {encryptionStatus === 'missing_private_key' && (
+          <div className="p-4 mx-4 mb-4 bg-red-500/5 border border-red-500/10 rounded-2xl">
+             <div className="flex gap-3">
+              <KeyIcon size={16} className="text-red-500 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Messages Locked</p>
+                <p className="text-[11px] text-red-500/60 font-medium">This device doesn't have your keys. Set up backup on your other device to unlock.</p>
+              </div>
+             </div>
+          </div>
+        )}
+
         {/* Conversations Scroll Area */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {filteredConversations.length === 0 ? (
@@ -241,29 +284,25 @@ export default function MessagesPage() {
         )}
       </motion.div>
 
-      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
+       <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
+      
+      <KeyBackupModal 
+        isOpen={showBackupModal} 
+        onClose={() => setShowBackupModal(false)}
+        onSuccess={() => {
+          setShowBackupModal(false)
+          window.location.reload()
+        }}
+      />
 
-      {/* Right Panel: Placeholder for Chat Window (Visible on desktop) */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#050505] relative"
-      >
-        <div className="mesh-gradient-bg opacity-10 absolute inset-0 pointer-events-none" />
-        <div className="flex flex-col items-center gap-6 text-center max-w-sm px-6 relative z-10">
-          <div className="w-20 h-20 rounded-[2.5rem] border border-white/5 bg-[#0a0a0a] flex items-center justify-center text-gray-800 shadow-2xl relative">
-            <div className="absolute inset-0 bg-silver/5 blur-3xl rounded-full" />
-             <MessageCircle size={40} className="relative z-10" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-black text-white tracking-tighter">Your Encrypted Space</h2>
-            <p className="text-sm text-gray-500 leading-relaxed font-medium">
-              Select a conversation to start chatting securely with fellow builders.
-            </p>
-          </div>
-        </div>
-      </motion.div>
+      <KeyRecoveryModal 
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        onSuccess={() => {
+          setShowRecoveryModal(false)
+          window.location.reload()
+        }}
+      />
     </div>
   )
 }

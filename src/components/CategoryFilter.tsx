@@ -1,6 +1,6 @@
 "use client"
 
-const categories = ['All', 'Web3', 'AI', 'Mobile', 'DevTools', 'Game', 'Other']
+const categories = ['All', 'Speak', 'Web3', 'AI', 'Mobile', 'DevTools', 'Game', 'Other']
 
 export default function CategoryFilter({ 
   selected, 

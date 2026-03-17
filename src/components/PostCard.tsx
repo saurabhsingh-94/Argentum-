@@ -11,7 +11,8 @@ import {
   Share2, 
   Bookmark,
   Link2,
-  Check
+  Check,
+  Zap
 } from 'lucide-react'
 import { Database } from '@/types/database'
 import ReactionButton from './ReactionButton'
@@ -83,6 +84,7 @@ export default function PostCard({
       className={`
         relative group bg-[#111] rounded-2xl border border-white/8 transition-all duration-300 hover:border-white/20 hover:shadow-2xl
         ${post.verification_status === 'verified' ? 'border-l-2 border-l-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.05)]' : ''}
+        ${(post.category as any) === 'Speak' ? 'border-amber-500/30 bg-gradient-to-br from-[#111] to-[#1a140a] hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.03)]' : ''}
       `}
     >
       <div className="p-5 flex flex-col h-full">
@@ -110,6 +112,11 @@ export default function PostCard({
                 {isOwner && (
                   <span className="px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-[8px] font-black text-green-500 uppercase tracking-widest">
                     Author
+                  </span>
+                )}
+                {(post.category as any) === 'Speak' && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[8px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                    <Zap size={8} fill="currentColor" /> Speak
                   </span>
                 )}
               </div>

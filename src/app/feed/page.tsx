@@ -13,6 +13,25 @@ export default async function FeedPage() {
     .order('created_at', { ascending: false })
     .limit(10)
 
+  // Fetch trending tags (categories) dynamically
+  const { data: trendingData } = await supabase
+    .from('posts')
+    .select('category')
+    .eq('status', 'published')
+    .is('category', 'not.null')
+  
+  const tagCounts: Record<string, number> = {}
+  trendingData?.forEach((p: { category: string | null }) => {
+    if (p.category) {
+      tagCounts[p.category] = (tagCounts[p.category] || 0) + 1
+    }
+  })
+
+  const trendingTags = Object.entries(tagCounts)
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <div className="container mx-auto px-4 lg:px-6 py-10">
@@ -64,12 +83,14 @@ export default async function FeedPage() {
                   <h3 className="text-xs font-black uppercase tracking-widest">Trending Tags</h3>
                </div>
                <div className="flex flex-col gap-4">
-                  {['Web3', 'AI', 'Fullstack', 'DevTools', 'UI/UX'].map((tag, i) => (
+                  {trendingTags.length > 0 ? trendingTags.map(({ tag, count }) => (
                     <div key={tag} className="flex items-center justify-between group cursor-pointer">
                        <span className="text-sm text-gray-400 group-hover:text-white transition-colors">#{tag}</span>
-                       <span className="text-[10px] font-mono text-gray-600">{(120 - i * 15)} posts</span>
+                       <span className="text-[10px] font-mono text-gray-600">{count} posts</span>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center py-4">No trending tags yet</p>
+                  )}
                </div>
             </div>
 
