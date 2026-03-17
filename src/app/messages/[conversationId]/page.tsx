@@ -76,6 +76,8 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const [replyTo, setReplyTo] = useState<any>(null)
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -149,12 +151,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 let decrypted = content
 
                 if (!content.startsWith('[IMAGE]:')) {
-                    const senderProfile = conv.participant_1 === payload.new.sender_id 
-                      ? conv.participant_1_profile 
-                      : conv.participant_2_profile
+                    const isOwn = payload.new.sender_id === user.id
+                    const otherProfile = conv.participant_1 === user.id ? conv.participant_2_profile : conv.participant_1_profile
+                    const senderProfile = conv.participant_1 === payload.new.sender_id ? conv.participant_1_profile : conv.participant_2_profile
+                    const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
                     
                     if (secretKey) {
-                        decrypted = decryptMessage(content, senderProfile.public_key, secretKey) || "Encrypted message"
+                        decrypted = decryptMessage(content, decryptionKey, secretKey) || "Encrypted message"
                     } else {
                         decrypted = "Encrypted message"
                     }
@@ -240,11 +243,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       
       let decrypted = msg.content
       if (!msg.content.startsWith('[IMAGE]:')) {
-          const senderProfile = conv.participant_1 === msg.sender_id 
-            ? conv.participant_1_profile 
-            : conv.participant_2_profile
+          const isOwn = msg.sender_id === userId
+          const otherProfile = conv.participant_1 === userId ? conv.participant_2_profile : conv.participant_1_profile
+          const senderProfile = conv.participant_1 === msg.sender_id ? conv.participant_1_profile : conv.participant_2_profile
+          const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
+          
           if (secretKey) {
-            decrypted = decryptMessage(msg.content, senderProfile.public_key, secretKey) || "Encrypted message"
+            decrypted = decryptMessage(msg.content, decryptionKey, secretKey) || "Encrypted message"
           } else {
             decrypted = "Encrypted message"
           }
@@ -342,6 +347,21 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
     e.stopPropagation()
     setContextMenu({ x: e.clientX, y: e.clientY, msg, isOwn })
     setBgContextMenu(null)
+  }
+
+  const handleEditMessage = async () => {
+      if (!editingId || !editContent.trim() || !otherParticipant) return
+      const secretKey = getStoredSecretKey()
+      if (!secretKey) return
+
+      try {
+          const encrypted = encryptMessage(editContent, otherParticipant.public_key, secretKey)
+          await supabase.from('messages').update({ content: encrypted }).eq('id', editingId)
+          setEditingId(null)
+          setEditContent('')
+      } catch (err) {
+          console.error(err)
+      }
   }
 
   const handleBgContextMenu = (e: React.MouseEvent) => {
@@ -531,8 +551,26 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                             className="rounded-lg max-w-full cursor-pointer hover:brightness-110 transition-all" 
                             onClick={() => setLightboxImage(imageUrl)}
                           />
+                      ) : editingId === msg.id ? (
+                          <div className="flex flex-col gap-2 min-w-[200px]">
+                              <textarea 
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-sm focus:outline-none"
+                                autoFocus
+                              />
+                              <div className="flex justify-end gap-2">
+                                  <button onClick={() => setEditingId(null)} className="p-1 hover:bg-white/10 rounded"><X size={14} /></button>
+                                  <button onClick={handleEditMessage} className="p-1 hover:bg-white/10 rounded"><Check size={14} /></button>
+                              </div>
+                          </div>
                       ) : (
-                          msg.decryptedContent
+                          <div className="flex flex-col gap-0.5">
+                            {msg.decryptedContent}
+                            {msg.created_at !== msg.updated_at && (
+                                <span className="text-[8px] opacity-40 lowercase">(edited)</span>
+                            )}
+                          </div>
                       )}
                       
                       {msg.expires_at && !msg.expired && (
@@ -691,6 +729,11 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 <button onClick={() => { navigator.clipboard.writeText(contextMenu.msg.decryptedContent); setContextMenu(null); }} className="ctx-btn"><Copy size={16} /> Copy text</button>
                 {contextMenu.isOwn ? (
                     <>
+                        {!contextMenu.msg.content.startsWith('[IMAGE]:') && (
+                            <button onClick={() => { setEditingId(contextMenu.msg.id); setEditContent(contextMenu.msg.decryptedContent); setContextMenu(null); }} className="ctx-btn">
+                                <Pencil size={16} /> Edit message
+                            </button>
+                        )}
                         <button className="ctx-btn group relative">
                             <Clock size={16} /> Set expiry
                             <ChevronRight size={14} className="ml-auto opacity-50" />
