@@ -89,12 +89,18 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
           {/* Left Section: Logo */}
           <div className="flex items-center gap-2 shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center bg-[#111] group-hover:border-white/40 transition-all">
-                <span className="text-xs font-black text-white italic">Ag</span>
-              </div>
-              <span className="text-[11px] font-black tracking-[0.4em] text-white/40 group-hover:text-white transition-colors hidden md:block">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-8 h-8 rounded-lg border border-silver/30 flex items-center justify-center bg-[#111] shadow-glow-silver/0 group-hover:shadow-glow-silver/20 group-hover:border-silver/50 transition-all duration-300"
+              >
+                <span className="text-xs font-black text-white italic group-hover:silver-glow-text">Ag</span>
+              </motion.div>
+              <motion.span 
+                whileHover={{ letterSpacing: "0.5em" }}
+                className="text-[11px] font-black tracking-[0.4em] text-silver/40 group-hover:text-silver group-hover:silver-glow-text transition-all duration-500 hidden md:block"
+              >
                 ARGENTUM
-              </span>
+              </motion.span>
             </Link>
           </div>
 
@@ -155,7 +161,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
                   <Link 
                     href="/new" 
-                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-green-900/20 transition-all active:scale-95"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full silver-metallic text-[#050505] text-[10px] font-black uppercase tracking-widest shadow-glow-silver/20 hover:brightness-110 transition-all active:scale-95"
                   >
                     <Plus size={14} />
                     <span>Build Log</span>
@@ -250,7 +256,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/5 z-[100] flex items-center justify-around px-4">
         <MobileNavItem icon={<Home size={20} />} label="Feed" href="/feed" active={pathname === '/feed'} />
         <MobileNavItem icon={<Compass size={20} />} label="Explore" href="/explore" active={pathname === '/explore'} />
-        <Link href="/new" className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white -translate-y-4 shadow-xl shadow-green-900/40">
+        <Link href="/new" className="w-12 h-12 silver-metallic rounded-2xl flex items-center justify-center text-black -translate-y-4 shadow-glow-silver/30 active:scale-90 transition-all">
            <Plus size={24} />
         </Link>
         <MobileNavItem icon={<MessageCircle size={20} />} label="Chat" href="/messages" active={pathname === '/messages'} />
