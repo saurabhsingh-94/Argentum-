@@ -189,7 +189,26 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         )
         .subscribe();
 
-      return channel;
+      // Subscribe to reactions as per user request
+      const reactionsChannel = supabase
+        .channel(`reactions:${conversationId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'message_reactions' },
+          (payload: any) => {
+            // Refetch or update local state for the specific message
+            const messageId = payload.new?.message_id || payload.old?.message_id;
+            if (messageId) {
+                refreshMessageReactions(messageId);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+        supabase.removeChannel(reactionsChannel);
+      };
     }
 
     let channel: any
@@ -254,10 +273,21 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
     }
   }
 
+  const refreshMessageReactions = async (messageId: string) => {
+      const { data: reactions } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .eq('message_id', messageId);
+      
+      setMessages((prev: any[]) => prev.map(m => 
+          m.id === messageId ? { ...m, message_reactions: reactions || [] } : m
+      ));
+  }
+
   const fetchMessages = async (conv: any, userId: string) => {
     const { data, error } = await supabase
       .from('messages')
-      .select('*')
+      .select('*, message_reactions(*)')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 
@@ -265,6 +295,29 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
     const processedMessages = data.map((msg: any) => processMessage(msg, conv, userId)).filter(Boolean)
     setMessages(processedMessages)
+  }
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+      if (!currentUser) return;
+      
+      const { data: existing } = await supabase
+          .from('message_reactions')
+          .select('id')
+          .eq('message_id', messageId)
+          .eq('user_id', currentUser.id)
+          .eq('emoji', emoji)
+          .single();
+
+      if (existing) {
+          await supabase.from('message_reactions').delete().eq('id', existing.id);
+      } else {
+          await supabase.from('message_reactions').insert({
+              message_id: messageId,
+              user_id: currentUser.id,
+              emoji: emoji
+          });
+      }
+      setContextMenu(null);
   }
 
   const handleSendMessage = async (e?: React.FormEvent, contentOverride?: string) => {
@@ -592,6 +645,26 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                           </div>
                       )}
                       
+                      {msg.message_reactions?.length > 0 && (
+                        <div className={`flex gap-1 mt-2 flex-wrap ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                          {Object.entries(
+                            msg.message_reactions.reduce((acc: any, r: any) => {
+                              acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                              return acc;
+                            }, {} as Record<string, number>)
+                          ).map(([emoji, count]: [string, any]) => (
+                            <button
+                              key={emoji}
+                              onClick={() => toggleReaction(msg.id, emoji)}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-white/10 hover:bg-white/20 border border-white/10 transition-all font-bold"
+                            >
+                              <span>{emoji}</span>
+                              {count > 1 && <span className="text-white/60">{count}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {msg.expires_at && !msg.expired && (
                           <div className="absolute -top-1 -right-1">
                               <div className="bg-orange-500 w-2 h-2 rounded-full animate-pulse" />
@@ -743,34 +816,36 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 }}
                 className="fixed z-[200] w-56 bg-[#0d0d0d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-3xl p-2 flex flex-col gap-1"
             >
-                {!contextMenu.isOwn && (
+                {contextMenu && !contextMenu.isOwn && (
                     <div className="flex justify-around p-2 border-b border-white/5 mb-1">
-                        {['👍', '❤️', '😂', '😮', '😢', '🔥'].map(e => <button key={e} className="hover:scale-125 transition-all">{e}</button>)}
+                        {['👍', '❤️', '😂', '😮', '😢', '🔥'].map(e => <button key={e} onClick={() => toggleReaction(contextMenu.msg.id, e)} className="hover:scale-125 transition-all">{e}</button>)}
                     </div>
                 )}
-                <button onClick={() => { navigator.clipboard.writeText(contextMenu.msg.decryptedContent); setContextMenu(null); }} className="ctx-btn"><Copy size={16} /> Copy text</button>
-                {contextMenu.isOwn ? (
+                <button onClick={() => { if (contextMenu) navigator.clipboard.writeText(contextMenu.msg.decryptedContent); setContextMenu(null); }} className="ctx-btn"><Copy size={16} /> Copy text</button>
+                {contextMenu && contextMenu.isOwn ? (
                     <>
-                        {!contextMenu.msg.content.startsWith('[IMAGE]:') && (
-                            <button onClick={() => { setEditingId(contextMenu.msg.id); setEditContent(contextMenu.msg.decryptedContent); setContextMenu(null); }} className="ctx-btn">
+                        {contextMenu && !contextMenu.msg.content.startsWith('[IMAGE]:') && (
+                            <button onClick={() => { if (contextMenu) { setEditingId(contextMenu.msg.id); setEditContent(contextMenu.msg.decryptedContent); } setContextMenu(null); }} className="ctx-btn">
                                 <Pencil size={16} /> Edit message
                             </button>
                         )}
                         <button className="ctx-btn group relative">
                             <Clock size={16} /> Set expiry
                             <ChevronRight size={14} className="ml-auto opacity-50" />
-                            <div className="hidden group-hover:block absolute left-full top-0 ml-1 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl">
+                            <div className={`hidden group-hover:block absolute top-0 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl ${
+                                (typeof window !== 'undefined' && contextMenu && contextMenu.x > window.innerWidth - 400) ? 'right-full mr-1' : 'left-full ml-1'
+                            }`}>
                                 {['After viewing', '1 Day', '1 Week', 'Lifetime'].map(opt => (
-                                    <button key={opt} onClick={() => setExpiry(contextMenu.msg, opt)} className="ctx-btn text-[9px]">{opt}</button>
+                                    <button key={opt} onClick={() => { if (contextMenu) setExpiry(contextMenu.msg, opt); }} className="ctx-btn text-[9px]">{opt}</button>
                                 ))}
                             </div>
                         </button>
-                        <button onClick={() => deleteMessage(contextMenu.msg, false)} className="ctx-btn"><Trash2 size={16} /> Delete for me</button>
-                        <button onClick={() => deleteMessage(contextMenu.msg, true)} className="ctx-btn text-red-500/80"><Trash2 size={16} /> Delete for everyone</button>
+                        <button onClick={() => { if (contextMenu) deleteMessage(contextMenu.msg, false); }} className="ctx-btn"><Trash2 size={16} /> Delete for me</button>
+                        <button onClick={() => { if (contextMenu) deleteMessage(contextMenu.msg, true); }} className="ctx-btn text-red-500/80"><Trash2 size={16} /> Delete for everyone</button>
                     </>
                 ) : (
                     <>
-                        <button onClick={() => { setReplyTo(contextMenu.msg); setContextMenu(null); }} className="ctx-btn"><Reply size={16} /> Reply</button>
+                        <button onClick={() => { if (contextMenu) setReplyTo(contextMenu.msg); setContextMenu(null); }} className="ctx-btn"><Reply size={16} /> Reply</button>
                         <button className="ctx-btn text-orange-500/80"><AlertTriangle size={16} /> Report</button>
                     </>
                 )}
@@ -792,7 +867,9 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 <button className="ctx-btn group relative">
                     <VolumeX size={16} /> Mute notifications
                     <ChevronRight size={14} className="ml-auto opacity-50" />
-                    <div className="hidden group-hover:block absolute left-full top-0 ml-1 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl">
+                    <div className={`hidden group-hover:block absolute top-0 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl ${
+                        (typeof window !== 'undefined' && bgContextMenu.x > window.innerWidth - 400) ? 'right-full mr-1' : 'left-full ml-1'
+                    }`}>
                         {['24 Hours', '1 Week', 'Always'].map(opt => (
                             <button key={opt} onClick={() => { setIsMuted(true); localStorage.setItem(`muted_${conversationId}`, 'true'); setBgContextMenu(null); }} className="ctx-btn text-[9px]">{opt}</button>
                         ))}
