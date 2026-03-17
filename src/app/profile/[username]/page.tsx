@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import ProfileClient from './ProfileClient'
+import ProfileContent from '@/components/ProfileContent'
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
@@ -13,7 +13,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   // Fetch user profile - resilient select
   const { data: profile, error: profileError } = await supabase
     .from('users')
-    .select('id, username, display_name, avatar_url, bio, currently_building, streak_count')
+    .select('id, username, display_name, avatar_url, bio, currently_building, streak_count, created_at, github_username, x_handle, website_url')
     .eq('username', username.toLowerCase())
     .single()
 
@@ -46,7 +46,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const isOwner = currentUser?.id === profile.id
 
   return (
-    <ProfileClient 
+    <ProfileContent 
       initialProfile={profile} 
       posts={posts || []} 
       isOwner={isOwner} 
