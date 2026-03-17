@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PostCard from './PostCard'
 import { Loader2 } from 'lucide-react'
+import ReportModal from './ReportModal'
 
 interface InfiniteFeedProps {
   initialPosts: any[]
@@ -15,7 +16,15 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialPosts.length === 10)
   const [page, setPage] = useState(1)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
+      if (user) setCurrentUserId(user.id)
+    })
+  }, [])
 
   useEffect(() => {
     setPosts(initialPosts)
@@ -62,9 +71,21 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
     <div className="flex flex-col gap-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
+          <PostCard 
+            key={post.id} 
+            post={post} 
+            currentUserId={currentUserId || undefined}
+            onReport={(id) => setReportingPostId(id)}
+          />
         ))}
       </div>
+
+      <ReportModal 
+        isOpen={!!reportingPostId} 
+        onClose={() => setReportingPostId(null)}
+        postId={reportingPostId || ''}
+        currentUserId={currentUserId || ''}
+      />
 
       {hasMore && (
         <div className="flex justify-center pt-8">

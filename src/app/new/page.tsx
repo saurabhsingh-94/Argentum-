@@ -62,6 +62,60 @@ export default function NewPost() {
         .single()
 
       if (error) throw error
+
+      // 3. Record Streak History
+      const postDate = new Date().toISOString().split('T')[0]
+      const { data: existingStreak } = await supabase
+        .from('streak_history')
+        .select('post_count')
+        .eq('user_id', user.id)
+        .eq('post_date', postDate)
+        .single()
+
+      if (existingStreak) {
+        await supabase
+          .from('streak_history')
+          .update({ post_count: existingStreak.post_count + 1 })
+          .eq('user_id', user.id)
+          .eq('post_date', postDate)
+      } else {
+        await supabase
+          .from('streak_history')
+          .insert({
+            user_id: user.id,
+            post_date: postDate,
+            post_count: 1
+          })
+      }
+
+      // 4. Recalcalculate User Streak Count
+      const { data: allHistory } = await supabase
+        .from('streak_history')
+        .select('post_date')
+        .eq('user_id', user.id)
+        .order('post_date', { ascending: false })
+
+      if (allHistory) {
+        let currentStreak = 0
+        let lastDate = new Date()
+        const checkDate = new Date()
+        
+        for (const entry of allHistory) {
+          const entryDate = new Date(entry.post_date)
+          const diffDays = Math.floor((checkDate.getTime() - entryDate.getTime()) / (1000 * 3600 * 24))
+          
+          if (diffDays === currentStreak) {
+            currentStreak++
+          } else if (diffDays > currentStreak) {
+            break
+          }
+        }
+
+        await supabase
+          .from('users')
+          .update({ streak_count: currentStreak })
+          .eq('id', user.id)
+      }
       
       router.push(`/post/${data.id}`)
     } catch (error: any) {

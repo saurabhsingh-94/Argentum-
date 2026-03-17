@@ -2,13 +2,10 @@
 
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { 
-  Github, 
   Plus, 
-  LogIn, 
-  ChevronDown, 
   Search, 
   Loader2, 
   MessageCircle, 
@@ -17,221 +14,269 @@ import {
   Users,
   LogOut,
   User as UserIcon,
-  CheckCircle
+  Flame,
+  MoreVertical,
+  ChevronDown,
+  LayoutGrid,
+  Home,
+  Compass
 } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import AccountSwitcher from './AccountSwitcher'
 import { motion, AnimatePresence } from 'framer-motion'
+import StreakModal from './StreakModal'
 
-export default function Navbar({ onSearchClick }: { onSearchClick: () => void }) {
+export default function Navbar() {
   const supabase = createClient()
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showStreakModal, setShowStreakModal] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!supabase) return
-
     const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUser(user)
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        setUser(authUser)
         const { data: prof } = await supabase
           .from('users')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .single()
         
-        if (prof) {
-          setProfile(prof)
-          // Save to saved_accounts
-          const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
-          const existingIdx = saved.findIndex((a: any) => a.id === user.id)
-          const accInfo = {
-            id: user.id,
-            email: user.email,
-            username: prof.username,
-            avatar_url: prof.avatar_url,
-            display_name: prof.display_name
-          }
-          if (existingIdx > -1) saved[existingIdx] = accInfo
-          else saved.push(accInfo)
-          localStorage.setItem('saved_accounts', JSON.stringify(saved))
-        }
+        if (prof) setProfile(prof)
       }
     }
     setup()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null)
-      if (session?.user) {
-        setup()
-      } else {
-        setProfile(null)
-      }
+      if (session?.user) setup()
+      else setProfile(null)
     })
 
-    const clickOutside = () => setShowDropdown(false)
-    window.addEventListener('click', clickOutside)
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    
     return () => {
-        subscription.unsubscribe()
-        window.removeEventListener('click', clickOutside)
+      subscription.unsubscribe()
+      document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [supabase])
 
+  const navLinks = [
+    { name: 'Feed', href: '/feed' },
+    { name: 'Explore', href: '/explore' }
+  ]
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl border border-silver/40 flex items-center justify-center bg-[#0d0d0d] group-hover:silver-glow transition-all duration-500 group-hover:rotate-[10deg]">
-              <span className="text-sm font-bold text-silver selection:bg-transparent">Ag</span>
-            </div>
-            <div className="flex flex-col overflow-hidden">
-               <span className="text-[10px] font-bold tracking-[0.4em] text-silver uppercase hidden sm:block selection:bg-transparent group-hover:translate-y-[-100%] transition-transform duration-500">
+    <>
+      <nav className="sticky top-0 z-[100] w-full border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <div className="mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Left Section: Logo */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center bg-[#111] group-hover:border-white/40 transition-all">
+                <span className="text-xs font-black text-white italic">Ag</span>
+              </div>
+              <span className="text-[11px] font-black tracking-[0.4em] text-white/40 group-hover:text-white transition-colors hidden md:block">
                 ARGENTUM
               </span>
-              <span className="text-[10px] font-bold tracking-[0.4em] text-white uppercase hidden sm:block selection:bg-transparent translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-500 absolute">
-                ARGENTUM
-              </span>
-            </div>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8 font-mono tracking-tighter">
-            {[
-              { name: 'Feed', href: '/feed' },
-              { name: 'Explore', href: '/explore' }
-            ].map((item) => (
-              <Link 
-                key={item.name} 
-                href={item.href} 
-                className="text-[11px] text-gray-500 hover:text-white transition-all duration-300 uppercase font-bold relative group/link"
-              >
-                {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-silver transition-all duration-300 group-hover/link:w-full" />
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onSearchClick}
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:border-white/40 transition-all active:scale-95 group/search"
-          >
-            <Search size={16} className="group-hover/search:text-silver transition-colors" />
-          </button>
-
-          {user && (
-            <Link 
-              href="/messages"
-              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:border-white/40 transition-all active:scale-95 group/messages relative"
-            >
-              <MessageCircle size={16} className="group-hover/messages:text-silver transition-colors" />
             </Link>
-          )}
+          </div>
 
-          {user && <NotificationBell />}
-
-          {user ? (
-            <div className="flex items-center gap-5">
-              <Link 
-                href="/new" 
-                className="silver-metallic flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-glow hover:shadow-[0_0_25px_rgba(255,255,255,0.3)]"
-              >
-                <Plus size={14} />
-                <span>Build Log</span>
-              </Link>
-
-              {/* Build Streak UI */}
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 group/streak hover:border-orange-500/50 transition-all cursor-default">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-orange-500 blur-md opacity-20 group-hover:opacity-40 transition-opacity animate-pulse" />
-                  <svg className="w-4 h-4 text-orange-500 relative z-10 animate-bounce" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.9 2.5C11.5 1.5 9.8 1.4 8.6 2.1c-2.3 1.3-3.1 4.5-1.5 7 .2.4.5.7.8 1.1-.9 2.1-1.1 4.3-.4 6.3 1.1 3.2 4.1 5.5 7.6 5.5s6.5-2.3 7.6-5.5c.7-2 .5-4.2-.4-6.3 1.6-2.5.8-5.7-1.5-7-1.2-.7-2.9-.6-4.3.4" />
-                  </svg>
-                </div>
-                <div className="flex flex-col -space-y-1">
-                  <span className="text-[10px] font-black text-white group-hover:text-orange-500 transition-colors">
-                    {user.user_metadata.streak_count || profile?.streak_count || 1}
-                  </span>
-                  <span className="text-[7px] font-bold text-gray-500 uppercase tracking-widest">Streak</span>
-                </div>
-              </div>
-
-              <div className="relative">
-                <div 
-                  className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver hover:border-white/40 hover:silver-glow transition-all duration-500 cursor-pointer"
-                  onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
+          {/* Center Section: Navigation & Search */}
+          <div className="flex-1 flex items-center justify-center max-w-4xl gap-8">
+            <div className="hidden lg:flex items-center gap-8">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.name} 
+                  href={link.href} 
+                  className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all relative py-1
+                    ${pathname === link.href ? 'text-white' : 'text-white/40 hover:text-white'}
+                  `}
                 >
-                  {!profile && user ? (
-                    <Loader2 size={16} className="animate-spin text-silver/40" />
-                  ) : profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    user.email?.[0].toUpperCase()
+                  {link.name}
+                  {pathname === link.href && (
+                    <motion.div layoutId="nav-underline" className="absolute -bottom-1 left-0 right-0 h-px bg-green-500" />
                   )}
-                </div>
+                </Link>
+              ))}
+            </div>
 
-                <AnimatePresence>
-                  {showDropdown && (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 mt-3 w-56 p-2 bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-3xl z-[100]"
-                    >
-                        <div className="px-4 py-3 border-b border-white/[0.03] mb-2 bg-white/[0.02] rounded-t-xl">
-                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] leading-none mb-1.5 opacity-60">Architect</p>
-                            <p className="text-xs font-bold truncate text-silver group-hover:text-white transition-colors">{profile?.username || user.email}</p>
-                        </div>
-                        <div className="p-1 space-y-0.5">
-                          <Link href={`/profile/${profile?.username}`} className="nav-dropdown-btn">
-                              <UserIcon size={14} className="opacity-50" /> 
-                              <span>Profile</span>
-                          </Link>
-                          <Link href="/settings" className="nav-dropdown-btn">
-                              <Settings size={14} className="opacity-50" /> 
-                              <span>Settings</span>
-                          </Link>
-                          <button onClick={() => setShowAccountSwitcher(true)} className="nav-dropdown-btn">
-                              <Users size={14} className="opacity-50" /> 
-                              <span>Switch Account</span>
-                          </button>
-                        </div>
-                        <div className="h-px bg-white/[0.03] my-2" />
-                        <div className="p-1">
-                          <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="nav-dropdown-btn text-red-500/60 hover:text-red-500 hover:bg-red-500/5">
-                              <LogOut size={14} className="opacity-50" /> 
-                              <span>Sign Out</span>
-                          </button>
-                        </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            {/* YouTube-style Search Bar */}
+            <div className="flex-1 max-w-xl relative hidden md:block group">
+              <div className={`
+                flex items-center gap-3 px-4 py-2 rounded-full border bg-white/[0.02] transition-all
+                ${searchFocused ? 'border-white/40 ring-4 ring-white/5 bg-white/[0.05]' : 'border-white/10 group-hover:border-white/20'}
+              `}>
+                <Search size={16} className={searchFocused ? 'text-white' : 'text-white/20'} />
+                <input 
+                  type="text" 
+                  placeholder="Search builds, builders, tags..."
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  className="bg-transparent border-none outline-none text-sm text-white w-full placeholder:text-white/10"
+                />
+                <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 bg-white/5">
+                  <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Cmd+K</span>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="relative">
+          </div>
+
+          {/* Right Section: Actions */}
+          <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
+            {user ? (
+              <>
+                <div className="flex items-center gap-1 md:gap-3">
+                  <Link 
+                    href="/messages"
+                    className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all relative"
+                  >
+                    <MessageCircle size={18} />
+                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-green-500 rounded-full border-2 border-[#0a0a0a]" />
+                  </Link>
+
+                  <NotificationBell />
+
+                  <Link 
+                    href="/new" 
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-green-900/20 transition-all active:scale-95"
+                  >
+                    <Plus size={14} />
+                    <span>Build Log</span>
+                  </Link>
+                </div>
+
+                <div className="h-4 w-px bg-white/10 hidden md:block mx-1" />
+
+                {/* Streak Counter */}
+                <button 
+                   onClick={() => setShowStreakModal(true)}
+                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 group/streak hover:border-orange-500/40 transition-all"
+                >
+                   <Flame size={14} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                   <span className="text-xs font-black text-white">{profile?.streak_count || 0}</span>
+                </button>
+
+                {/* Profile Circle */}
+                <div className="relative" ref={dropdownRef}>
+                  <button 
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="w-9 h-9 rounded-full border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center group/avatar hover:border-white/30 transition-all"
+                  >
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-black text-white/40 group-hover/avatar:text-white transition-colors uppercase">
+                         {profile?.username?.[0] || user.email?.[0]}
+                      </span>
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {showDropdown && (
+                      <motion.div 
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          className="absolute right-0 mt-3 w-60 bg-[#111] border border-white/10 rounded-2xl shadow-3xl z-[150] overflow-hidden"
+                      >
+                          <div className="p-4 bg-white/[0.02] border-b border-white/5">
+                            <div className="flex items-center gap-3">
+                               <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                                  {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" /> : <span className="font-black text-xs">{profile?.username?.[0]}</span>}
+                               </div>
+                               <div className="flex flex-col min-w-0">
+                                  <span className="text-sm font-bold text-white truncate">{profile?.display_name || profile?.username}</span>
+                                  <span className="text-[10px] text-white/30 font-mono truncate">@{profile?.username}</span>
+                               </div>
+                            </div>
+                          </div>
+                   
+                          <div className="p-1">
+                            <DropdownItem icon={<UserIcon size={14} />} label="View Profile" href={`/profile/${profile?.username}`} />
+                            <DropdownItem icon={<Settings size={14} />} label="Edit Profile" href="/settings" />
+                            <DropdownItem icon={<Bell size={14} />} label="Notifications" href="/notifications" />
+                            <DropdownItem icon={<MessageCircle size={14} />} label="Messages" href="/messages" />
+                            <DropdownItem icon={<LayoutGrid size={14} />} label="Settings" href="/settings" />
+                            
+                            <div className="h-px bg-white/5 my-1" />
+                            <button 
+                              onClick={() => { setShowAccountSwitcher(true); setShowDropdown(false); }}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                            >
+                              <Users size={14} /> Switch Account
+                            </button>
+                            <button 
+                              onClick={async () => { await supabase.auth.signOut(); router.push('/'); }}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-500/60 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                            >
+                              <LogOut size={14} /> Sign Out
+                            </button>
+                          </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            ) : (
               <Link 
                 href="/auth/login"
-                className="flex items-center gap-2 bg-white/5 border border-white/20 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-white/10 transition-all active:scale-95 hover:border-white/40"
+                className="px-6 py-2 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
               >
-                <LogIn size={14} className="text-silver" />
-                <span>Sign In</span>
+                Sign In
               </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+      </nav>
+
+      {/* Mobile Bottom Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/5 z-[100] flex items-center justify-around px-4">
+        <MobileNavItem icon={<Home size={20} />} label="Feed" href="/feed" active={pathname === '/feed'} />
+        <MobileNavItem icon={<Compass size={20} />} label="Explore" href="/explore" active={pathname === '/explore'} />
+        <Link href="/new" className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white -translate-y-4 shadow-xl shadow-green-900/40">
+           <Plus size={24} />
+        </Link>
+        <MobileNavItem icon={<MessageCircle size={20} />} label="Chat" href="/messages" active={pathname === '/messages'} />
+        <MobileNavItem icon={<UserIcon size={20} />} label="Me" href={`/profile/${profile?.username}`} active={pathname?.startsWith('/profile')} />
       </div>
+
+      <StreakModal 
+        isOpen={showStreakModal} 
+        onClose={() => setShowStreakModal(false)} 
+        userId={user?.id}
+      />
       <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
-      <style jsx>{`
-        .nav-dropdown-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #a1a1a1; transition: all 0.2s; }
-        .nav-dropdown-btn:hover { background: rgba(255, 255, 255, 0.04); color: white; scale: 1.01; }
-      `}</style>
-    </nav>
+    </>
+  )
+}
+
+function DropdownItem({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+      {icon}
+      <span>{label}</span>
+    </Link>
+  )
+}
+
+function MobileNavItem({ icon, label, href, active }: { icon: React.ReactNode, label: string, href: string, active: boolean }) {
+  return (
+    <Link href={href} className={`flex flex-col items-center gap-1 ${active ? 'text-green-500' : 'text-white/40'}`}>
+      {icon}
+      <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
+    </Link>
   )
 }

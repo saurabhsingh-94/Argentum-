@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Github, Globe, Award, Flame, Zap, Twitter, Instagram, Edit3, Share2, Calendar, Rocket, Lock, Globe2, AtSign, Search, Pin, MessageCircle, Loader2 } from 'lucide-react'
+import { Github, Globe, Award, Flame, Zap, Twitter, Instagram, Edit3, Share2, Calendar, Rocket, Lock, Globe2, AtSign, Search, Pin, MessageCircle, Loader2, ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
@@ -9,6 +9,9 @@ import EmptyState from '@/components/EmptyState'
 import EditProfileModal from '@/components/EditProfileModal'
 import FollowButton from '@/components/FollowButton'
 import { createClient } from '@/lib/supabase/client'
+import ReportModal from './ReportModal'
+import StreakModal from './StreakModal'
+import { motion, useSpring, useTransform, animate } from 'framer-motion'
 
 interface ProfileContentProps {
   initialProfile: any
@@ -20,16 +23,25 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
   const [profile, setProfile] = useState(initialProfile)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  const [animate, setAnimate] = useState(false)
+  const [animateState, setAnimateState] = useState(false)
   const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 })
   const [isFollowing, setIsFollowing] = useState(false)
   const [isMessagingLoading, setIsMessagingLoading] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null)
+  const [isStreakModalOpen, setIsStreakModalOpen] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
+      if (user) setCurrentUserId(user.id)
+    })
+  }, [])
+
+  useEffect(() => {
     setIsMounted(true)
-    const timer = setTimeout(() => setAnimate(true), 10)
+    const timer = setTimeout(() => setAnimateState(true), 10)
 
     const fetchFollowData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -83,28 +95,28 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
   const getAnimationStyle = (type: 'fade' | 'slideLeft' | 'slideBottom', delay: number, customProps?: string) => {
     const base = {
       transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
-      opacity: animate ? 1 : 0,
+      opacity: animateState ? 1 : 0,
     }
 
     if (type === 'slideLeft') {
       return {
         ...base,
-        transform: animate ? 'translateX(0)' : 'translateX(-20px)',
+        transform: animateState ? 'translateX(0)' : 'translateX(-20px)',
       }
     }
 
     if (type === 'slideBottom') {
       return {
         ...base,
-        transform: animate ? 'translateY(0)' : 'translateY(20px)',
+        transform: animateState ? 'translateY(0)' : 'translateY(20px)',
       }
     }
 
     if (customProps === 'avatar') {
         return {
             transition: `all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${delay}ms`,
-            opacity: animate ? 1 : 0,
-            transform: animate ? 'scale(1)' : 'scale(0.8)',
+            opacity: animateState ? 1 : 0,
+            transform: animateState ? 'scale(1)' : 'scale(0.8)',
         }
     }
 
@@ -408,15 +420,27 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
 
             {/* Main Content Feed */}
             <div className="lg:col-span-8 flex flex-col gap-10">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div style={getAnimationStyle('slideBottom', 200)}>
                   <StatsCard label="Builds" value={posts?.length || 0} icon={<Zap size={20} className="text-accent" />} />
                 </div>
-                <div style={getAnimationStyle('slideBottom', 250)}>
-                  <StatsCard label="Streak" value={profile.streak_count || 0} icon={<Flame size={20} className="text-orange-500" />} />
+                <div 
+                  style={getAnimationStyle('slideBottom', 250)}
+                  onClick={() => isOwner && setIsStreakModalOpen(true)}
+                  className={isOwner ? 'cursor-pointer' : ''}
+                >
+                  <StatsCard 
+                    label="Streak" 
+                    value={profile.streak_count || 0} 
+                    icon={<Flame size={20} className="text-orange-500" />} 
+                    isStreak={isOwner}
+                  />
                 </div>
                 <div style={getAnimationStyle('slideBottom', 300)}>
-                  <StatsCard label="Verified" value={posts?.filter((p: any) => p.verification_status === 'verified').length || 0} icon={<Award size={20} className="text-blue-500" />} />
+                  <StatsCard label="Upvotes" value={profile.total_upvotes_received || 0} icon={<ArrowUpRight size={20} className="text-blue-400" />} />
+                </div>
+                <div style={getAnimationStyle('slideBottom', 350)}>
+                  <StatsCard label="Verified" value={posts?.filter((p: any) => p.verification_status === 'verified').length || 0} icon={<Award size={20} className="text-silver" />} />
                 </div>
               </div>
 
@@ -444,6 +468,8 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                             isOwner={isOwner}
                             isPinned={post.id === profile.pinned_post_id}
                             onPin={handlePin}
+                            currentUserId={currentUserId || undefined}
+                            onReport={(id) => setReportingPostId(id)}
                         />
                       </div>
                     ))}
@@ -470,18 +496,51 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
         profile={profile}
         onUpdate={handleUpdateProfile}
       />
+
+      <ReportModal 
+        isOpen={!!reportingPostId} 
+        onClose={() => setReportingPostId(null)}
+        postId={reportingPostId || ''}
+        currentUserId={currentUserId || ''}
+      />
+
+      <StreakModal 
+        isOpen={isStreakModalOpen}
+        onClose={() => setIsStreakModalOpen(false)}
+        userId={profile.id}
+        username={profile.username}
+      />
     </div>
   )
 }
 
-function StatsCard({ label, value, icon }: { label: string, value: any, icon: React.ReactNode }) {
+function StatsCard({ label, value, icon, isStreak }: { label: string, value: any, icon: React.ReactNode, isStreak?: boolean }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    const controls = animate(0, typeof value === 'number' ? value : 0, {
+      duration: 1.5,
+      ease: "easeOut",
+      onUpdate: (latest) => setDisplayValue(Math.floor(latest))
+    })
+    return () => controls.stop()
+  }, [value])
+
   return (
-    <div className="glass-card p-6 flex flex-col items-center justify-center text-center gap-3 group transition-all hover:bg-white/[0.03] hover:border-white/20">
-      <div className="w-12 h-12 rounded-2xl bg-[#111] border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+    <div className={`
+      glass-card p-6 flex flex-col items-center justify-center text-center gap-3 group transition-all hover:bg-white/[0.03] hover:border-white/20
+      ${isStreak ? 'hover:ring-1 hover:ring-orange-500/20 shadow-glow-orange/0 hover:shadow-glow-orange/10' : ''}
+    `}>
+      <div className={`
+        w-12 h-12 rounded-2xl bg-[#111] border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform
+        ${isStreak ? 'group-hover:shadow-glow-orange/50' : ''}
+      `}>
         {icon}
       </div>
       <div className="flex flex-col">
-        <span className="text-3xl font-black text-white group-hover:silver-glow-text transition-all tracking-tight">{value}</span>
+        <span className="text-3xl font-black text-white group-hover:silver-glow-text transition-all tracking-tight">
+          {typeof value === 'number' ? displayValue : value}
+        </span>
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mt-1">{label}</span>
       </div>
     </div>

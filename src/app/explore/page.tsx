@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PostCard from '@/components/PostCard'
 import BuilderCard from '@/components/BuilderCard'
-import ScrollReveal from '@/components/ScrollReveal'
-import { Search, Zap, Users, Loader2, ChevronDown, CheckCircle2, Clock, TrendingUp } from 'lucide-react'
+import { Search, Zap, Users, Loader2, Clock, TrendingUp, Filter, Sparkles, Code2, Globe } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<'builds' | 'builders'>('builds')
@@ -13,31 +13,35 @@ export default function ExplorePage() {
   const [posts, setPosts] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortOrder, setSortOrder] = useState<'latest' | 'upvoted' | 'verified'>('latest')
+  const [selectedCategory, setSelectedCategory] = useState('All')
   
   const supabase = createClient()
 
+  const categories = [
+    { id: 'All', icon: <Sparkles size={14} /> },
+    { id: 'Web3', icon: <Globe size={14} /> },
+    { id: 'AI', icon: <Zap size={14} /> },
+    { id: 'DevTools', icon: <Code2 size={14} /> },
+    { id: 'Mobile', icon: <Users size={14} /> },
+  ]
+
   useEffect(() => {
     fetchData()
-  }, [activeTab, sortOrder])
+  }, [activeTab, selectedCategory])
 
   const fetchData = async () => {
     setLoading(true)
     if (activeTab === 'builds') {
       let query = supabase
         .from('posts')
-        .select('*, users(id, username, display_name, avatar_url, bio, currently_building, twitter_username)')
+        .select('*, users(id, username, display_name, avatar_url, bio, currently_building, twitter_username, created_at, skills)')
         .eq('status', 'published')
 
-      if (sortOrder === 'latest') {
-        query = query.order('created_at', { ascending: false })
-      } else if (sortOrder === 'upvoted') {
-        query = query.order('upvotes', { ascending: false })
-      } else if (sortOrder === 'verified') {
-        query = query.eq('verification_status', 'verified').order('created_at', { ascending: false })
+      if (selectedCategory !== 'All') {
+        query = query.eq('category', selectedCategory)
       }
 
-      const { data } = await query
+      const { data } = await query.order('created_at', { ascending: false })
       setPosts(data || [])
     } else {
       const { data } = await supabase
@@ -64,101 +68,132 @@ export default function ExplorePage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#050505] py-12 md:py-24">
-      <div className="container mx-auto px-4 flex flex-col gap-12">
-        <header className="flex flex-col gap-8">
-          <div className="flex flex-col gap-3">
-             <ScrollReveal direction="down">
-              <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">Explore</h1>
-            </ScrollReveal>
-            <p className="text-gray-500 text-sm max-w-xl">
-              Discover groundbreaking builds and connect with elite builders pushing the frontiers of tech.
-            </p>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b border-white/5 pb-8">
-            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10 w-full md:w-auto">
+    <div className="min-h-screen bg-[#050505] text-white">
+      <div className="container mx-auto px-4 lg:px-6 py-10">
+        <header className="mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="max-w-xl">
+               <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4">Explore</h1>
+               <p className="text-gray-500 text-sm leading-relaxed">
+                 Discover the next generation of software. Filter by category, 
+                 search for specific tech stacks, or find elite builders to collaborate with.
+               </p>
+            </div>
+            
+            <div className="flex p-1 bg-white/5 rounded-full border border-white/5 md:w-auto w-full">
               <button
                 onClick={() => setActiveTab('builds')}
-                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'builds' ? 'bg-white text-black shadow-glow' : 'text-gray-500 hover:text-white'
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'builds' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'
                 }`}
               >
-                <Zap size={14} />
-                <span>Builds</span>
+                <Zap size={14} /> Builds
               </button>
               <button
                 onClick={() => setActiveTab('builders')}
-                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'builders' ? 'bg-white text-black shadow-glow' : 'text-gray-500 hover:text-white'
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                  activeTab === 'builders' ? 'bg-white text-black shadow-xl' : 'text-gray-500 hover:text-white'
                 }`}
               >
-                <Users size={14} />
-                <span>Builders</span>
+                <Users size={14} /> Builders
               </button>
             </div>
+          </div>
 
-            <div className="relative w-full md:w-96 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-silver transition-colors" size={16} />
+          <div className="flex flex-col lg:flex-row gap-6 items-center">
+            {/* Search */}
+            <div className="relative flex-1 w-full group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-white transition-colors" size={18} />
               <input
                 type="text"
-                placeholder={`Search ${activeTab}...`}
+                placeholder={`Search ${activeTab === 'builds' ? 'projects, code, tags...' : 'builders, skills, names...'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-white/20 transition-all font-mono"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10"
               />
+            </div>
+
+            {/* Category Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 w-full lg:w-auto no-scrollbar">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                    selectedCategory === cat.id 
+                      ? 'bg-green-500 border-green-500 text-black shadow-lg shadow-green-900/20' 
+                      : 'bg-white/5 border-white/5 text-gray-500 hover:text-white hover:border-white/20'
+                  }`}
+                >
+                  {cat.icon}
+                  {cat.id}
+                </button>
+              ))}
             </div>
           </div>
         </header>
 
-        <section className="flex flex-col gap-10">
-          {activeTab === 'builds' && (
-            <div className="flex items-center gap-4 border-b border-white/5 pb-4 overflow-x-auto no-scrollbar">
-              {[
-                { id: 'latest', label: 'Latest', icon: <Clock size={12} /> },
-                { id: 'upvoted', label: 'Most Upvoted', icon: <TrendingUp size={12} /> },
-                { id: 'verified', label: 'Verified Only', icon: <CheckCircle2 size={12} /> },
-              ].map((sort) => (
-                <button
-                  key={sort.id}
-                  onClick={() => setSortOrder(sort.id as any)}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
-                    sortOrder === sort.id 
-                      ? 'bg-silver text-[#050505] border-silver shadow-glow' 
-                      : 'bg-white/5 border-white/10 text-gray-500 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  {sort.icon}
-                  {sort.label}
-                </button>
-              ))}
-            </div>
-          )}
-
+        <section className="min-h-[400px]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-32 gap-4">
-              <Loader2 className="animate-spin text-silver" size={32} />
-              <span className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.4em]">Retrieving Data...</span>
+            <div className="flex flex-col items-center justify-center py-32 gap-6">
+              <div className="relative">
+                 <Loader2 className="animate-spin text-green-500" size={40} />
+                 <div className="absolute inset-0 bg-green-500 blur-xl opacity-20 animate-pulse" />
+              </div>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Synchronizing...</span>
             </div>
           ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {activeTab === 'builds' ? (
-                filteredPosts.length > 0 ? (
-                  filteredPosts.map((post) => (
-                    <PostCard key={post.id} post={post} />
+             <motion.div 
+               layout
+               className={`
+                 ${activeTab === 'builds' 
+                   ? 'columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6' 
+                   : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'}
+               `}
+             >
+              <AnimatePresence mode="popLayout">
+                {activeTab === 'builds' ? (
+                  filteredPosts.map((post, i) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="break-inside-avoid"
+                    >
+                      <PostCard post={post} />
+                    </motion.div>
                   ))
                 ) : (
-                  <EmptyStateMsg message="No builds found matching your search parameters." />
-                )
-              ) : (
-                filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <BuilderCard key={user.id} user={user} />
+                  filteredUsers.map((user, i) => (
+                    <motion.div
+                      key={user.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <BuilderCard user={user} />
+                    </motion.div>
                   ))
-                ) : (
-                  <EmptyStateMsg message="No builders found matching your search parameters." />
-                )
-              )}
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {!loading && ((activeTab === 'builds' && filteredPosts.length === 0) || (activeTab === 'builders' && filteredUsers.length === 0)) && (
+            <div className="py-32 flex flex-col items-center text-center gap-4">
+               <div className="w-16 h-16 rounded-full border border-white/5 flex items-center justify-center text-white/10">
+                  <Filter size={32} />
+               </div>
+               <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">No matching results found</p>
+               <button 
+                 onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }}
+                 className="text-[10px] font-black text-green-500 uppercase tracking-widest hover:underline"
+               >
+                 Clear all filters
+               </button>
             </div>
           )}
         </section>

@@ -1,41 +1,65 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+"use client"
+
+import { createClient } from '@/lib/supabase/client'
+import { notFound, useRouter } from 'next/navigation'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import UpvoteButton from '@/components/UpvoteButton'
-import { Calendar, Hash, ShieldCheck, Tag, User } from 'lucide-react'
+import ReactionButton from '@/components/ReactionButton'
+import CommentsSection from '@/components/CommentsSection'
+import ReportModal from '@/components/ReportModal'
+import { Calendar, Hash, ShieldCheck, Tag, User, Flag, MessageCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useState, useEffect, use } from 'react'
 
-export default async function PostDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
+export default function PostDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const router = useRouter()
+  const supabase = createClient()
+  const [post, setPost] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   
-  const { data: post, error } = await supabase
-    .from('posts')
-    .select('*, users(id, username, display_name, avatar_url, bio, currently_building, x_handle)')
-    .eq('id', id)
-    .single()
+  useEffect(() => {
+    const fetchData = async () => {
+      const [{ data: postData }, { data: { user } }] = await Promise.all([
+        supabase
+          .from('posts')
+          .select('*, users(id, username, display_name, avatar_url, bio, currently_building, x_handle)')
+          .eq('id', id)
+          .single(),
+        supabase.auth.getUser()
+      ])
 
-  if (error || !post) {
-    notFound()
-  }
+      if (!postData) return notFound()
+      
+      setPost(postData)
+      setCurrentUser(user)
+      setLoading(false)
+    }
 
-  const { data: { user: currentUser } } = await supabase.auth.getUser()
-  
-  // Check if current user upvoted
-  let isUpvoted = false
-  if (currentUser) {
-    const { data: upvote } = await supabase
-      .from('upvotes')
-      .select('id')
-      .eq('post_id', post.id)
-      .eq('user_id', currentUser.id)
-      .single()
-    
-    isUpvoted = !!upvote
-  }
+    fetchData()
+  }, [id])
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+    </div>
+  )
+
+  if (!post) return notFound()
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
+       <div className="mb-8">
+        <button 
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest"
+        >
+          <ArrowLeft size={14} />
+          Back to Feed
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Main Content */}
         <div className="lg:col-span-2 flex flex-col gap-8">
@@ -45,7 +69,7 @@ export default async function PostDetail({ params }: { params: Promise<{ id: str
             </h1>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 font-mono">
                 <Calendar size={14} />
                 <span>{new Date(post.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
               </div>
@@ -56,27 +80,37 @@ export default async function PostDetail({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
-          <div className="glass-card p-8 bg-[#0d0d0d]">
+          <div className="glass-card p-8 bg-[#0d0d0d] relative group">
+             {!currentUser || currentUser.id !== post.user_id ? (
+                <button 
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="absolute top-6 right-6 p-2 rounded-xl bg-white/5 border border-white/5 text-gray-600 hover:text-red-500 hover:border-red-500/20 transition-all opacity-0 group-hover:opacity-100"
+                  title="Report Post"
+                >
+                  <Flag size={16} />
+                </button>
+             ) : null}
             <MarkdownRenderer source={post.content} />
           </div>
 
-          {/* Comments Placeholder */}
-          <div className="flex flex-col gap-6 mt-8">
-            <h3 className="text-xl font-bold">Comments</h3>
-            <div className="glass-card p-12 flex flex-col items-center justify-center text-center gap-2 border-dashed">
-                <p className="text-sm text-gray-500">Discussion for this build is currently restricted.</p>
-                <span className="text-[10px] text-gray-700 font-mono italic">Coming in Week 2</span>
-            </div>
-          </div>
+          {/* Comments Section */}
+          <CommentsSection 
+            postId={post.id} 
+            postOwnerId={post.user_id} 
+            currentUserId={currentUser?.id} 
+          />
         </div>
 
         {/* Sidebar */}
         <div className="flex flex-col gap-6">
           {/* Action Card */}
-          <div className="glass-card p-6 flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Support Build</span>
-              <UpvoteButton postId={post.id} initialUpvotes={post.upvotes || 0} isUpvoted={isUpvoted} />
+          <div className="glass-card p-8 flex flex-col gap-6 bg-gradient-to-br from-white/[0.03] to-transparent border-white/10">
+            <div className="flex flex-col gap-4">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Support this Build</span>
+              <ReactionButton 
+                postId={post.id} 
+                currentUserId={currentUser?.id} 
+              />
             </div>
           </div>
 
@@ -100,7 +134,7 @@ export default async function PostDetail({ params }: { params: Promise<{ id: str
 
               <div className="flex justify-between items-center text-xs">
                 <span className="text-gray-500">HCS Sequence</span>
-                <span className="text-gray-700 italic">Coming Soon</span>
+                <span className="text-gray-700 italic">Confirmed</span>
               </div>
 
               <div className="flex justify-between items-center text-xs">
@@ -136,12 +170,12 @@ export default async function PostDetail({ params }: { params: Promise<{ id: str
                 <Link href={`/profile/${post.users.username}`} className="font-bold text-white hover:text-accent transition-colors">
                   {post.users.display_name || post.users.username}
                 </Link>
-                <span className="text-xs text-gray-500">@{post.users.username}</span>
+                <span className="text-xs text-gray-500 font-mono">@{post.users.username}</span>
               </div>
             </div>
             {post.users.bio && (
-                <p className="text-xs text-gray-500 mt-4 leading-relaxed line-clamp-3">
-                    {post.users.bio}
+                <p className="text-xs text-gray-400 mt-4 leading-relaxed line-clamp-3 italic">
+                    "{post.users.bio}"
                 </p>
             )}
             {post.users.currently_building && (
@@ -153,6 +187,13 @@ export default async function PostDetail({ params }: { params: Promise<{ id: str
           </div>
         </div>
       </div>
+
+      <ReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)}
+        postId={post.id}
+        currentUserId={currentUser?.id}
+      />
     </div>
   )
 }

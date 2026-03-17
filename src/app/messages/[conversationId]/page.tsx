@@ -43,12 +43,18 @@ import {
   Flame,
   Settings,
   Users,
-  LogOut
+  LogOut,
+  Camera,
+  Image as ImageIcon,
+  File as FileIcon,
+  ChevronUp
 } from 'lucide-react'
 import Link from 'next/link'
 import { decryptMessage, encryptMessage, getStoredSecretKey, initializeEncryption } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
 import AccountSwitcher from '@/components/AccountSwitcher'
+import CameraCapture from '@/components/CameraCapture'
+import Lightbox from '@/components/Lightbox'
 
 const supabase = createClient()
 
@@ -79,6 +85,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [filePreview, setFilePreview] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -320,10 +330,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       setContextMenu(null);
   }
 
-  const handleSendMessage = async (e?: React.FormEvent, contentOverride?: string) => {
+  const handleSendMessage = async (e?: React.FormEvent, contentOverride?: string, attachmentData?: any) => {
     if (e) e.preventDefault()
     const content = contentOverride || newMessage
-    if (!content.trim() || sending || !otherParticipant || !conversation) return
+    if ((!content.trim() && !attachmentData) || sending || !otherParticipant || !conversation) return
 
     const secretKey = getStoredSecretKey()
     if (!secretKey && !content.startsWith('[IMAGE]:')) {
@@ -354,7 +364,11 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           conversation_id: conversationId,
           sender_id: currentUser.id,
           content: finalContent,
-          expires_at: expiresAt
+          expires_at: expiresAt,
+          attachment_url: attachmentData?.url,
+          attachment_type: attachmentData?.type,
+          attachment_name: attachmentData?.name,
+          attachment_size: attachmentData?.size
         })
 
       if (error) throw error
@@ -365,35 +379,62 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
+  const handleFileUpload = async (file: File | Blob, type: 'image' | 'file') => {
       if (!file) return
-      if (file.size > 5 * 1024 * 1024) return alert("Max 5MB")
-
+      
       setUploading(true)
       setUploadProgress(10)
 
       try {
-          const fileExt = file.name.split('.').pop()
-          const fileName = `${Math.random()}.${fileExt}`
-          const filePath = `${conversationId}/${fileName}`
+          const isBlob = file instanceof Blob && !(file instanceof File)
+          const fileName = isBlob ? `camera_${Date.now()}.jpg` : (file as File).name
+          const fileExt = fileName.split('.').pop()
+          const storagePath = `${conversationId}/${Math.random()}.${fileExt}`
 
           const { error: uploadError } = await supabase.storage
               .from('message-attachments')
-              .upload(filePath, file)
+              .upload(storagePath, file, {
+                  cacheControl: '3600',
+                  upsert: false
+              })
 
           if (uploadError) throw uploadError
 
           const { data: { publicUrl } } = supabase.storage
               .from('message-attachments')
-              .getPublicUrl(filePath)
+              .getPublicUrl(storagePath)
 
-          await handleSendMessage(undefined, `[IMAGE]:${publicUrl}`)
+          await handleSendMessage(
+            undefined, 
+            type === 'image' ? `[IMAGE]:${publicUrl}` : `[FILE]:${fileName}`,
+            {
+                url: publicUrl,
+                type: type,
+                name: fileName,
+                size: file.size
+            }
+          )
+          setFilePreview(null)
+          setSelectedFile(null)
       } catch (err) {
           console.error(err)
+          alert("Upload failed")
       } finally {
           setUploading(false)
           setUploadProgress(0)
+      }
+  }
+
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+          if (file.size > 10 * 1024 * 1024) return alert("Max 10MB")
+          setSelectedFile(file)
+          if (file.type.startsWith('image/')) {
+              const reader = new FileReader()
+              reader.onload = (re) => setFilePreview(re.target?.result as string)
+              reader.readAsDataURL(file)
+          }
       }
   }
 
@@ -604,17 +645,50 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                      </div>
                   )}
                   <div 
-                    className={`max-w-[80%] md:max-w-[60%] group relative`}
+                    className={`max-w-[75%] md:max-w-[60%] group relative`}
                     onContextMenu={(e) => handleContextMenu(e, msg, isOwn)}
                   >
-                    <div className={`relative px-5 py-3.5 text-sm leading-relaxed ${
+                    <div className={`relative px-4 py-3 text-sm leading-relaxed ${
                       isOwn 
                         ? 'silver-metallic text-[#050505] rounded-2xl rounded-br-none' 
-                        : 'bg-[#1a1a1a] text-white rounded-2xl rounded-bl-none border border-white/5'
+                        : 'bg-[#1a1a1a] text-white rounded-2xl rounded-bl-none border border-white/5 shadow-xl'
                     } ${msg.expired ? 'opacity-30' : ''}`}>
                       {msg.expired ? (
                           <div className="flex items-center gap-2 italic">
                               <Clock size={14} /> This message has expired
+                          </div>
+                      ) : msg.attachment_url && msg.attachment_type === 'image' ? (
+                          <div className="flex flex-col gap-2">
+                              <img 
+                                src={msg.attachment_url} 
+                                alt="attachment" 
+                                className="rounded-lg max-w-full cursor-zoom-in hover:brightness-110 transition-all border border-white/10 shadow-lg" 
+                                onClick={() => setLightboxImage(msg.attachment_url)}
+                              />
+                              {msg.decryptedContent && !msg.decryptedContent.startsWith('[IMAGE]:') && (
+                                  <div className="px-1 py-1">{msg.decryptedContent}</div>
+                              )}
+                          </div>
+                      ) : msg.attachment_url && msg.attachment_type === 'file' ? (
+                          <div className="flex flex-col gap-2 min-w-[200px]">
+                              <a 
+                                href={msg.attachment_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all group/file"
+                              >
+                                  <div className="p-2 bg-white/5 rounded-lg border border-white/10 group-hover/file:bg-white/10 transition-colors">
+                                      <FileIcon size={20} className={isOwn ? 'text-black/60' : 'text-blue-400'} />
+                                  </div>
+                                  <div className="flex flex-col flex-1 min-w-0">
+                                      <span className="text-[10px] font-black uppercase opacity-60">Document</span>
+                                      <span className="text-xs font-bold truncate">{msg.attachment_name || 'Generic File'}</span>
+                                      <span className="text-[9px] opacity-40 font-mono">{(msg.attachment_size / 1024).toFixed(1)} KB</span>
+                                  </div>
+                              </a>
+                              {msg.decryptedContent && !msg.decryptedContent.startsWith('[FILE]:') && (
+                                  <div className="px-1">{msg.decryptedContent}</div>
+                              )}
                           </div>
                       ) : isImage ? (
                           <img 
@@ -647,12 +721,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                       
                       {msg.message_reactions?.length > 0 && (
                         <div className={`flex gap-1 mt-2 flex-wrap ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                          {Object.entries(
-                            msg.message_reactions.reduce((acc: any, r: any) => {
-                              acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                              return acc;
-                            }, {} as Record<string, number>)
-                          ).map(([emoji, count]: [string, any]) => (
+                          {(Object.entries((msg.message_reactions || []).reduce((acc: any, r: any) => {
+                            acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>)) as [string, number][]).map(([emoji, count]) => (
                             <button
                               key={emoji}
                               onClick={() => toggleReaction(msg.id, emoji)}
@@ -713,35 +785,103 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           )}
           
           <div className="max-w-6xl mx-auto flex flex-col gap-3">
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all">
-                    <Paperclip size={20} />
-                </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                <div className="relative">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} 
+                    className={`p-3 rounded-full transition-all ${showAttachmentMenu ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                  >
+                      <Paperclip size={20} className={showAttachmentMenu ? 'rotate-45 transition-transform' : ''} />
+                  </button>
+                  
+                  <AnimatePresence>
+                      {showAttachmentMenu && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                            className="absolute bottom-full left-0 mb-4 w-48 bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-3xl p-2 z-[200]"
+                          >
+                              <button type="button" onClick={() => { setIsCameraOpen(true); setShowAttachmentMenu(false); }} className="ctx-btn">
+                                  <Camera size={16} /> Take Photo
+                              </button>
+                              <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', 'image/*'); fileInputRef.current?.click(); setShowAttachmentMenu(false); }} className="ctx-btn">
+                                  <ImageIcon size={16} /> Images
+                              </button>
+                              <button type="button" onClick={() => { fileInputRef.current?.removeAttribute('accept'); fileInputRef.current?.click(); setShowAttachmentMenu(false); }} className="ctx-btn">
+                                  <FileIcon size={16} /> Documents
+                              </button>
+                          </motion.div>
+                      )}
+                  </AnimatePresence>
+                </div>
+                <input type="file" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
               </div>
               
               <div className="relative flex-1">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500">
                    <Lock size={16} />
                 </div>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Send a secure message..."
-                  className="w-full bg-[#1a1a1a] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:border-silver/40 focus:glow-silver transition-all"
-                />
+                {filePreview ? (
+                  <div className="w-full bg-[#1a1a1a] border border-silver/40 rounded-2xl p-2 flex items-center gap-4 animate-scale-in">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10 relative group">
+                          <img src={filePreview} className="w-full h-full object-cover" />
+                          <button onClick={() => { setFilePreview(null); setSelectedFile(null); }} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><X size={14}/></button>
+                      </div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                          <span className="text-[10px] font-black uppercase text-silver">Image Attachment</span>
+                          <span className="text-xs text-gray-500 truncate">{selectedFile?.name}</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => selectedFile && handleFileUpload(selectedFile, 'image')}
+                        disabled={uploading}
+                        className="px-6 py-2 silver-metallic rounded-xl text-[10px] font-black uppercase tracking-widest mr-2"
+                      >
+                          {uploading ? <Loader2 size={12} className="animate-spin" /> : 'Send'}
+                      </button>
+                  </div>
+                ) : selectedFile ? (
+                  <div className="w-full bg-[#1a1a1a] border border-blue-500/40 rounded-2xl p-3 flex items-center gap-4 animate-scale-in">
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/10"><FileIcon size={20} className="text-blue-400" /></div>
+                      <div className="flex flex-col flex-1 min-w-0">
+                          <span className="text-[10px] font-black uppercase text-blue-400">File Attachment</span>
+                          <span className="text-xs text-gray-500 truncate">{selectedFile?.name} ({(selectedFile?.size || 0) / 1024 > 1024 ? ((selectedFile?.size || 0) / (1024 * 1024)).toFixed(1) + ' MB' : ((selectedFile?.size || 0) / 1024).toFixed(1) + ' KB'})</span>
+                      </div>
+                      <button onClick={() => { setSelectedFile(null); setFilePreview(null); }} className="p-2 text-gray-500 hover:text-white"><X size={16}/></button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleFileUpload(selectedFile, 'file')}
+                        disabled={uploading}
+                        className="px-6 py-2 bg-blue-600/20 border border-blue-500/40 rounded-xl text-[10px] font-black uppercase tracking-widest mr-2 text-blue-400"
+                      >
+                          {uploading ? <Loader2 size={12} className="animate-spin" /> : 'Send'}
+                      </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendMessage} className="w-full h-full">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Send a secure message..."
+                      className="w-full h-full bg-[#1a1a1a] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:border-silver/40 focus:glow-silver transition-all"
+                    />
+                  </form>
+                )}
               </div>
 
               <button
-                type="submit"
-                disabled={!newMessage.trim() || sending}
+                type="button" // Change to button since form logic is nested or handled manually
+                onClick={() => handleSendMessage()}
+                disabled={(!newMessage.trim() && !selectedFile) || sending}
                 className="w-14 h-14 rounded-full bg-[#22c55e] text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-glow-green"
               >
                 {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               </button>
-            </form>
+            </div>
             {uploading && (
                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                     <div className="h-full bg-green-500 transition-all" style={{ width: `${uploadProgress}%` }} />
@@ -765,7 +905,6 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                     <h3 className="text-xl font-black">Builder Profile</h3>
                     <button onClick={() => setShowProfilePanel(false)}><X size={24} /></button>
                 </div>
-                {/* Profile implementation mostly same as before, simplified for space */}
                 <div className="flex flex-col items-center text-center gap-8">
                     <div className="relative group">
                         <div className="absolute inset-0 bg-silver/10 blur-2xl group-hover:bg-silver/20 transition-all rounded-full" />
@@ -868,7 +1007,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                     <VolumeX size={16} /> Mute notifications
                     <ChevronRight size={14} className="ml-auto opacity-50" />
                     <div className={`hidden group-hover:block absolute top-0 w-40 bg-[#0d0d0d] border border-white/10 rounded-xl p-1 shadow-2xl ${
-                        (typeof window !== 'undefined' && bgContextMenu.x > window.innerWidth - 400) ? 'right-full mr-1' : 'left-full ml-1'
+                        (typeof window !== 'undefined' && bgContextMenu && bgContextMenu.x > (window.innerWidth - 400)) ? 'right-full mr-1' : 'left-full ml-1'
                     }`}>
                         {['24 Hours', '1 Week', 'Always'].map(opt => (
                             <button key={opt} onClick={() => { setIsMuted(true); localStorage.setItem(`muted_${conversationId}`, 'true'); setBgContextMenu(null); }} className="ctx-btn text-[9px]">{opt}</button>
@@ -891,20 +1030,19 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         )}
       </AnimatePresence>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-          {lightboxImage && (
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-xl flex items-center justify-center p-10 cursor-zoom-out"
-                onClick={() => setLightboxImage(null)}
-              >
-                  <img src={lightboxImage} className="max-w-full max-h-full rounded-2xl shadow-4xl" />
-              </motion.div>
-          )}
-      </AnimatePresence>
+      <Lightbox 
+        isOpen={!!lightboxImage} 
+        onClose={() => setLightboxImage(null)} 
+        imageUrl={lightboxImage} 
+      />
 
       <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
+      
+      <CameraCapture 
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(blob) => handleFileUpload(blob, 'image')}
+      />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
