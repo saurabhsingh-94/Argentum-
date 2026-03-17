@@ -1,35 +1,49 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, AtSign, FileText, Rocket, Github, Twitter, Globe, Lock, Save, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
-import Link from 'next/link'
+import { 
+  User, 
+  Lock, 
+  Bell, 
+  Shield, 
+  Eye, 
+  EyeOff, 
+  MessageSquare, 
+  LogOut, 
+  Trash2, 
+  ChevronRight, 
+  Github, 
+  Chrome, 
+  Download, 
+  RefreshCw, 
+  Layout, 
+  CheckCircle2, 
+  ShieldAlert,
+  Moon,
+  Smartphone,
+  CheckCircle
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Settings() {
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  
-  // Form State
-  const [username, setUsername] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [bio, setBio] = useState('')
-  const [currentlyBuilding, setCurrentlyBuilding] = useState('')
-  const [githubUsername, setGithubUsername] = useState('')
-  const [twitterUsername, setTwitterUsername] = useState('')
-  const [websiteUrl, setWebsiteUrl] = useState('')
-  const [skills, setSkills] = useState('')
-  const [isPublic, setIsPublic] = useState(true)
-  
-  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
-  
-  const router = useRouter()
+type SettingsSection = 'account' | 'privacy' | 'notifications' | 'messaging' | 'security' | 'appearance' | 'danger'
+
+export default function SettingsPage() {
   const supabase = createClient()
+  const router = useRouter()
+  const [activeSection, setActiveSection] = useState<SettingsSection>('account')
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [saving, setSaving] = useState(false)
+  
+  // Local Settings States
+  const [compactMode, setCompactMode] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
@@ -37,328 +51,427 @@ export default function Settings() {
       }
       setUser(user)
 
-      const { data: profile } = await supabase
+      const { data: prof } = await supabase
         .from('users')
-        .select('id, username, display_name, avatar_url, bio, currently_building, github_username, twitter_username, website_url, skills, is_public')
+        .select('*')
         .eq('id', user.id)
         .single()
-
-      if (profile) {
-        setUsername(profile.username || '')
-        setDisplayName(profile.display_name || '')
-        setBio(profile.bio || '')
-        setCurrentlyBuilding(profile.currently_building || '')
-        setGithubUsername(profile.github_username || '')
-        setTwitterUsername(profile.twitter_username || '')
-        setWebsiteUrl(profile.website_url || '')
-        setSkills(profile.skills?.join(', ') || '')
-        setIsPublic(profile.is_public !== false)
-      }
+      
+      setProfile(prof)
       setLoading(false)
-    }
-    fetchProfile()
-  }, [supabase, router])
 
-  // Real-time username check (only if changed from original)
-  useEffect(() => {
-    if (!username || username.length < 3) {
-        setUsernameStatus('idle')
-        return
+      const savedCompact = localStorage.getItem('appearance_compact') === 'true'
+      setCompactMode(savedCompact)
     }
 
-    const checkAvailability = async () => {
-      if (username === user?.user_metadata?.username) {
-          setUsernameStatus('available')
-          return
-      }
+    setup()
+  }, [])
 
-      setUsernameStatus('checking')
-      const { data, error } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', username.toLowerCase())
-        .neq('id', user.id)
-        .single()
-
-      if (error && error.code === 'PGRST116') {
-        setUsernameStatus('available')
-      } else {
-        setUsernameStatus('taken')
-      }
-    }
-
-    const timer = setTimeout(checkAvailability, 500)
-    return () => clearTimeout(timer)
-  }, [username, user, supabase])
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || saving) return
-    if (username.length < 3) {
-        setStatus({ type: 'error', message: 'Username must be at least 3 characters.' })
-        return
-    }
-
+  const updateProfile = async (updates: any) => {
     setSaving(true)
-    setStatus(null)
-
     try {
       const { error } = await supabase
         .from('users')
-        .update({
-          username: username.toLowerCase(),
-          display_name: displayName,
-          bio: bio || null,
-          currently_building: currentlyBuilding || null,
-          github_username: githubUsername || null,
-          twitter_username: twitterUsername || null,
-          website_url: websiteUrl || null,
-          skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
-          is_public: isPublic,
-        })
+        .update(updates)
         .eq('id', user.id)
-
-      if (error) throw error
       
-      setStatus({ type: 'success', message: 'Profile updated successfully!' })
-      setTimeout(() => setStatus(null), 3000)
-    } catch (error: any) {
-      setStatus({ type: 'error', message: error.message })
+      if (error) throw error
+      setProfile({ ...profile, ...updates })
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Failed to save settings')
     } finally {
       setSaving(false)
     }
   }
 
+  const toggleCompactMode = () => {
+    const newState = !compactMode
+    setCompactMode(newState)
+    localStorage.setItem('appearance_compact', String(newState))
+    // In a real app, this would update a global context/provider
+    window.location.reload() // Quick way to apply global change for now
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="h-screen bg-[#050505] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-silver animate-spin" />
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-[#050505] py-20">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <Link 
-          href={`/profile/${username}`} 
-          className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-8 group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="text-xs font-bold uppercase tracking-widest">Back to Profile</span>
-        </Link>
+  const sections = [
+    { id: 'account', label: 'Account', icon: User },
+    { id: 'privacy', label: 'Privacy', icon: Eye },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'messaging', label: 'Messaging', icon: MessageSquare },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'appearance', label: 'Appearance', icon: Layout },
+    { id: 'danger', label: 'Danger Zone', icon: ShieldAlert },
+  ]
 
-        <div className="flex flex-col gap-2 mb-12">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Profile Settings</h1>
-          <p className="text-gray-500">Customize how you appear in the Argentum protocol.</p>
+  return (
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col pt-16">
+      <div className="container mx-auto max-w-6xl flex-1 flex gap-8 px-4 py-8">
+        
+        {/* Sidebar Nav */}
+        <div className="w-64 hidden md:flex flex-col gap-2">
+          <h1 className="text-2xl font-black mb-6 px-4 tracking-tighter">Settings</h1>
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setActiveSection(s.id as SettingsSection)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeSection === s.id 
+                  ? 'bg-white/10 text-white silver-glow shadow-[0_0_15px_rgba(255,255,255,0.05)]' 
+                  : 'text-gray-500 hover:bg-white/5 hover:text-silver'
+              }`}
+            >
+              <s.icon size={18} />
+              {s.label}
+              {activeSection === s.id && <ChevronRight size={14} className="ml-auto opacity-50" />}
+            </button>
+          ))}
         </div>
 
-        <form onSubmit={handleSave} className="flex flex-col gap-8">
-          {/* Basic Info Section */}
-          <div className="glass-card p-8 flex flex-col gap-6">
-            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Identity</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Username</label>
-                <div className="relative">
-                  <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
-                    maxLength={30}
-                    className={`w-full bg-[#0d0d0d] border rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none transition-all ${
-                      usernameStatus === 'taken' ? 'border-red-500/50' : 'border-white/5 focus:border-silver/40'
-                    }`}
-                  />
-                  {usernameStatus === 'checking' && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 animate-spin" />}
-                  {usernameStatus === 'taken' && <AlertCircle className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />}
-                </div>
-                {usernameStatus === 'taken' && <span className="text-[9px] text-red-500 font-bold uppercase ml-1">Username taken</span>}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Display Name</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                  <input
-                    type="text"
-                    required
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Bio</label>
-              <div className="relative">
-                <FileText className="absolute left-4 top-4 text-gray-600" size={14} />
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={3}
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all resize-none"
-                  placeholder="Tell the world what you're building..."
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Currently Building</label>
-              <div className="relative">
-                <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                <input
-                  type="text"
-                  value={currentlyBuilding}
-                  onChange={(e) => setCurrentlyBuilding(e.target.value)}
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                  placeholder="The next great protocol..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Social Links Section */}
-          <div className="glass-card p-8 flex flex-col gap-6">
-            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Connectivity</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">GitHub Username</label>
-                <div className="relative">
-                  <Github className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                  <input
-                    type="text"
-                    value={githubUsername}
-                    onChange={(e) => setGithubUsername(e.target.value)}
-                    className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                    placeholder="username"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">X / Twitter Handle <span className="text-gray-700 font-normal lowercase">(Optional)</span></label>
-                <div className="relative">
-                  <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                  <input
-                    type="text"
-                    value={twitterUsername}
-                    onChange={(e) => setTwitterUsername(e.target.value)}
-                    className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                    placeholder="@username"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Website URL</label>
-              <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all"
-                  placeholder="https://yourwebsite.com"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Skills Section */}
-          <div className="glass-card p-8 flex flex-col gap-6">
-            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Specialization</h2>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Skills <span className="text-gray-700 font-normal lowercase">(Comma separated)</span></label>
-              <div className="relative">
-                <Rocket className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-                <input
-                  type="text"
-                  value={skills}
-                  onChange={(e) => setSkills(e.target.value)}
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-silver/40 transition-all font-mono"
-                  placeholder="React, Solidity, Rust..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Visibility Section */}
-          <div className="glass-card p-8 flex flex-col gap-6">
-            <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.2em] border-b border-white/5 pb-4">Privacy</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div 
-                onClick={() => setIsPublic(true)}
-                className={`cursor-pointer p-5 rounded-2xl border transition-all ${
-                  isPublic 
-                    ? 'bg-green-500/5 border-green-500 shadow-glow' 
-                    : 'bg-white/5 border-white/5 hover:border-white/10'
-                }`}
+        {/* Content Panel */}
+        <div className="flex-1 glass-card border border-white/5 rounded-[2rem] overflow-hidden flex flex-col bg-[#0a0a0a]/50">
+          <div className="p-8 md:p-12 max-w-3xl mx-auto w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSection}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <Globe size={18} className={isPublic ? 'text-green-500' : 'text-gray-400'} />
-                  <span className={`text-sm font-bold ${isPublic ? 'text-green-500' : 'text-white'}`}>Public</span>
-                </div>
-                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-tighter">Anyone can view your profile and builds</p>
-              </div>
+                {activeSection === 'account' && (
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-xl font-black mb-2">Account</h2>
+                      <p className="text-sm text-gray-500">Manage your profile and linked accounts.</p>
+                    </div>
 
-              <div 
-                onClick={() => setIsPublic(false)}
-                className={`cursor-pointer p-5 rounded-2xl border transition-all ${
-                  !isPublic 
-                    ? 'bg-green-500/5 border-green-500 shadow-glow' 
-                    : 'bg-white/5 border-white/5 hover:border-white/10'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <Lock size={18} className={!isPublic ? 'text-green-500' : 'text-gray-400'} />
-                  <span className={`text-sm font-bold ${!isPublic ? 'text-green-500' : 'text-white'}`}>Private</span>
-                </div>
-                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-tighter">Only you can see your profile</p>
-              </div>
-            </div>
-          </div>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-6 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                         <div className="w-16 h-16 rounded-2xl border border-white/10 bg-[#111] overflow-hidden flex items-center justify-center text-xl font-black text-silver">
+                            {profile.avatar_url ? (
+                              <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              profile.username[0].toUpperCase()
+                            )}
+                         </div>
+                         <div className="flex-1">
+                            <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Display Name</p>
+                            <h3 className="text-lg font-bold">{profile.display_name || profile.username}</h3>
+                         </div>
+                         <button 
+                            onClick={() => router.push(`/profile/${profile.username}`)}
+                            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                          >
+                           Edit Profile
+                         </button>
+                      </div>
 
-          <div className="flex items-center justify-between gap-4">
-            {status && (
-              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${status.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-                {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                {status.message}
-              </div>
-            )}
-            
-            <button
-              type="submit"
-              disabled={saving || usernameStatus === 'taken'}
-              className="ml-auto silver-metallic px-8 py-4 rounded-xl flex items-center gap-3 text-xs font-black uppercase tracking-widest shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
-            >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              <span>Save Changes</span>
-            </button>
+                      <div className="grid gap-4">
+                        <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
+                           <div>
+                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Username</p>
+                             <p className="text-sm text-silver">@{profile.username}</p>
+                           </div>
+                           <button className="text-[10px] font-black text-silver border-b border-white/20 hover:border-white transition-all uppercase tracking-widest p-1">Change</button>
+                        </div>
+
+                        <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Connected Accounts</p>
+                           <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Github size={18} className="text-gray-400" />
+                                  <span className="text-sm">GitHub</span>
+                                </div>
+                                <span className="text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-2 py-1 rounded-md">Connected</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Chrome size={18} className="text-gray-400" />
+                                  <span className="text-sm">Google</span>
+                                </div>
+                                <button className="text-[10px] font-black text-silver border-b border-white/20 hover:border-white transition-all uppercase tracking-widest p-1">Connect</button>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'privacy' && (
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-xl font-black mb-2">Privacy</h2>
+                      <p className="text-sm text-gray-500">Control who can see your activity and profile.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
+                         <div>
+                            <p className="text-sm font-bold text-white mb-1">Profile Visibility</p>
+                            <p className="text-xs text-gray-500">Make your profile visible to everyone.</p>
+                         </div>
+                         <button 
+                          onClick={() => updateProfile({ is_public: !profile.is_public })}
+                          className={`w-12 h-6 rounded-full relative transition-all ${profile.is_public ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-white/10'}`}
+                         >
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${profile.is_public ? 'left-7' : 'left-1'}`} />
+                         </button>
+                      </div>
+
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl border-l-2 border-l-green-500/30">
+                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Messaging & Presence</p>
+                         <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                               <p className="text-sm">Show online status</p>
+                               <button className="w-12 h-6 rounded-full bg-green-500 relative shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                                  <div className="absolute top-1 left-7 w-4 h-4 bg-white rounded-full transition-all" />
+                               </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                               <p className="text-sm">Show read receipts</p>
+                               <button className="w-12 h-6 rounded-full bg-green-500 relative shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+                                  <div className="absolute top-1 left-7 w-4 h-4 bg-white rounded-full transition-all" />
+                               </button>
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'notifications' && (
+                  <div className="space-y-8">
+                     <div>
+                      <h2 className="text-xl font-black mb-2">Notifications</h2>
+                      <p className="text-sm text-gray-500">Stay updated on your activity.</p>
+                    </div>
+
+                    <div className="space-y-3">
+                       {['Upvotes on my posts', 'Comments on my posts', 'New followers', 'Direct messages', 'Post verified'].map((item) => (
+                         <div key={item} className="p-5 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-white/[0.03] transition-all">
+                            <span className="text-sm text-gray-200">{item}</span>
+                            <button className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-green-500">
+                               <CheckCircle size={18} />
+                            </button>
+                         </div>
+                       ))}
+                    </div>
+
+                    <button className="w-full mt-4 p-4 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-widest text-silver hover:bg-white/10 transition-all flex items-center justify-center gap-3">
+                       <Smartphone size={16} />
+                       Enable Browser Push Notifications
+                    </button>
+                  </div>
+                )}
+
+                {activeSection === 'messaging' && (
+                   <div className="space-y-8">
+                      <div>
+                        <h2 className="text-xl font-black mb-2">Messaging</h2>
+                        <p className="text-sm text-gray-500">Advanced security for your conversations.</p>
+                      </div>
+
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl space-y-6">
+                         <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Default Disappearing Messages</p>
+                            <div className="grid grid-cols-4 gap-2">
+                               {['Off', '24h', '1 Week', 'Lifetime'].map((opt) => (
+                                 <button 
+                                  key={opt}
+                                  className={`p-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    opt === 'Off' ? 'bg-white/10 border-white/20 text-white' : 'border-white/5 text-gray-500 hover:border-white/20'
+                                  }`}
+                                 >
+                                   {opt}
+                                 </button>
+                               ))}
+                            </div>
+                         </div>
+                      </div>
+
+                      <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Blocked Users</p>
+                         <div className="flex flex-col items-center justify-center py-8 opacity-20 gap-4">
+                            <Trash2 size={24} />
+                            <p className="text-xs font-black uppercase tracking-widest">No one is blocked</p>
+                         </div>
+                      </div>
+                   </div>
+                )}
+
+                {activeSection === 'security' && (
+                  <div className="space-y-8">
+                     <div>
+                      <h2 className="text-xl font-black mb-2">Security</h2>
+                      <p className="text-sm text-gray-500">Protect your data and encryption keys.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                       <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Device Sessions</p>
+                          <div className="flex items-center justify-between">
+                             <div className="flex flex-col">
+                                <span className="text-sm font-bold">Chrome on Windows</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Active now</span>
+                             </div>
+                             <span className="w-2 h-2 rounded-full bg-green-500" />
+                          </div>
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-4">
+                          <button className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex flex-col items-center gap-3 text-center group">
+                             <RefreshCw size={24} className="text-orange-500 group-hover:rotate-180 transition-transform duration-500" />
+                             <div>
+                                <p className="text-xs font-black uppercase tracking-widest text-silver">Regenerate Keys</p>
+                                <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">Old messages will be unreadable</p>
+                             </div>
+                          </button>
+                          <button className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex flex-col items-center gap-3 text-center group">
+                             <Download size={24} className="text-blue-500 group-hover:translate-y-1 transition-transform" />
+                             <div>
+                                <p className="text-xs font-black uppercase tracking-widest text-silver">Download Data</p>
+                                <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">Export profile as JSON</p>
+                             </div>
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'appearance' && (
+                  <div className="space-y-8">
+                     <div>
+                      <h2 className="text-xl font-black mb-2">Appearance</h2>
+                      <p className="text-sm text-gray-500">Customize your visual experience.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                       <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                             <Moon size={18} className="text-silver" />
+                             <span className="text-sm font-bold">Theme</span>
+                          </div>
+                          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest">Dark</div>
+                       </div>
+
+                        <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-bold text-white mb-1">Compact Mode</p>
+                            <p className="text-xs text-gray-500">Reduces padding across the application.</p>
+                          </div>
+                          <button 
+                            onClick={toggleCompactMode}
+                            className={`w-12 h-6 rounded-full relative transition-all ${compactMode ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-white/10'}`}
+                          >
+                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${compactMode ? 'left-7' : 'left-1'}`} />
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'danger' && (
+                  <div className="space-y-8">
+                     <div className="p-8 border-2 border-red-500/20 bg-red-500/5 rounded-[2rem] space-y-8">
+                        <div>
+                          <h2 className="text-xl font-black text-red-500 mb-2">Danger Zone</h2>
+                          <p className="text-sm text-red-500/60 font-medium">Irreversible actions on your account.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                           <button 
+                            onClick={handleLogout}
+                            className="w-full p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all flex items-center justify-between group"
+                           >
+                              <div className="flex items-center gap-4">
+                                 <LogOut size={24} className="text-gray-400" />
+                                 <span className="text-sm font-bold">Sign Out</span>
+                              </div>
+                              <ChevronRight size={18} className="text-gray-600 group-hover:translate-x-1 transition-all" />
+                           </button>
+
+                           <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 space-y-6">
+                              <div className="flex items-center gap-4">
+                                 <Trash2 size={24} className="text-red-500" />
+                                 <div className="flex flex-col">
+                                    <span className="text-sm font-bold">Delete Account</span>
+                                    <span className="text-xs text-red-500/60">This will permanently erase all your data.</span>
+                                 </div>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                 <p className="text-[10px] font-black text-red-500/80 uppercase tracking-widest uppercase">Type "DELETE" to confirm</p>
+                                 <input 
+                                  value={deleteConfirm}
+                                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                                  className="w-full bg-[#111] border border-red-500/30 rounded-xl px-4 py-3 text-red-500 font-black placeholder:text-red-500/20 focus:outline-none" 
+                                  placeholder="DELETE"
+                                 />
+                                 <button 
+                                  disabled={deleteConfirm !== 'DELETE'}
+                                  className="w-full py-4 rounded-xl bg-red-500 text-black text-xs font-black uppercase tracking-widest disabled:opacity-20 hover:brightness-110 transition-all shadow-glow-red"
+                                 >
+                                    Confirm Account Deletion
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </form>
+        </div>
+      </div>
+      
+      {/* Mobile Nav Overlay */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-white/5 flex p-2 z-[100]">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setActiveSection(s.id as SettingsSection)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl transition-all ${
+              activeSection === s.id ? 'text-white' : 'text-gray-500'
+            }`}
+          >
+            <s.icon size={18} />
+          </button>
+        ))}
       </div>
 
-      <style jsx>{`
-        .silver-metallic {
-          background: linear-gradient(135deg, #e5e5e5 0%, #ffffff 50%, #e5e5e5 100%);
-          color: #000;
-          text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+      <style jsx global>{`
+        .silver-glow {
+          box-shadow: 0 0 15px rgba(192, 192, 192, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .shadow-glow {
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-        }
-        .shadow-glow:hover {
-          box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        .shadow-glow-red {
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
         }
       `}</style>
+    </div>
+  )
+}
+
+function Loader2({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <RefreshCw className="animate-spin" />
     </div>
   )
 }

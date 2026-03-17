@@ -5,6 +5,7 @@ import BootLoader from '@/components/BootLoader'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import CommandPalette from '@/components/CommandPalette'
+import PresenceHandler from '@/components/PresenceHandler'
 import { useEffect, useState } from 'react'
 
 export default function ClientLayout({
@@ -30,6 +31,7 @@ export default function ClientLayout({
       </main>
       <Footer />
       <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <PresenceHandler />
     </>
   )
 }

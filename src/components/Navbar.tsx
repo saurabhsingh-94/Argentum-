@@ -3,49 +3,83 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Github, Plus, LogIn, ChevronDown, Search, Loader2, MessageCircle, Bell } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { 
+  Github, 
+  Plus, 
+  LogIn, 
+  ChevronDown, 
+  Search, 
+  Loader2, 
+  MessageCircle, 
+  Bell,
+  Settings,
+  Users,
+  LogOut,
+  User as UserIcon,
+  CheckCircle
+} from 'lucide-react'
 import NotificationBell from './NotificationBell'
+import AccountSwitcher from './AccountSwitcher'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Navbar({ onSearchClick }: { onSearchClick: () => void }) {
   const supabase = createClient()
+  const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [profileUsername, setProfileUsername] = useState<string | null>(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
 
   useEffect(() => {
     if (!supabase) return
 
-    const getUser = async () => {
+    const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
-        // Fetch profile to get the correct username
-        const { data: profile } = await supabase
+        const { data: prof } = await supabase
           .from('users')
-          .select('username')
+          .select('*')
           .eq('id', user.id)
           .single()
         
-        if (profile) {
-          setProfileUsername(profile.username)
+        if (prof) {
+          setProfile(prof)
+          // Save to saved_accounts
+          const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
+          const existingIdx = saved.findIndex((a: any) => a.id === user.id)
+          const accInfo = {
+            id: user.id,
+            email: user.email,
+            username: prof.username,
+            avatar_url: prof.avatar_url,
+            display_name: prof.display_name
+          }
+          if (existingIdx > -1) saved[existingIdx] = accInfo
+          else saved.push(accInfo)
+          localStorage.setItem('saved_accounts', JSON.stringify(saved))
         }
       }
     }
-    getUser()
+    setup()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        getUser() // Re-fetch profile on auth change
+        setup()
       } else {
-        setProfileUsername(null)
+        setProfile(null)
       }
     })
 
-    return () => subscription.unsubscribe()
+    const clickOutside = () => setShowDropdown(false)
+    window.addEventListener('click', clickOutside)
+    return () => {
+        subscription.unsubscribe()
+        window.removeEventListener('click', clickOutside)
+    }
   }, [supabase])
-
-  /* Removed handleSignIn dropdown logic as we redirect to /auth/login now */
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
@@ -121,26 +155,52 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                 </div>
                 <div className="flex flex-col -space-y-1">
                   <span className="text-[10px] font-black text-white group-hover:text-orange-500 transition-colors">
-                    {user.user_metadata.streak_count || 1}
+                    {user.user_metadata.streak_count || profile?.streak_count || 1}
                   </span>
                   <span className="text-[7px] font-bold text-gray-500 uppercase tracking-widest">Streak</span>
                 </div>
               </div>
 
-              <Link 
-                href={profileUsername ? `/profile/${profileUsername}` : user?.user_metadata?.username ? `/profile/${user.user_metadata.username}` : user ? '/onboarding' : '#'} 
-                className={`group relative ${!profileUsername && !user?.user_metadata?.username && user ? 'cursor-wait' : ''}`}
-              >
-                <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver group-hover:border-white/40 group-hover:silver-glow transition-all duration-500">
-                  {!profileUsername && user ? (
+              <div className="relative" onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}>
+                <div className="w-10 h-10 rounded-xl border border-white/10 overflow-hidden bg-[#0d0d0d] flex items-center justify-center text-xs font-bold text-silver hover:border-white/40 hover:silver-glow transition-all duration-500 cursor-pointer">
+                  {!profile && user ? (
                     <Loader2 size={16} className="animate-spin text-silver/40" />
-                  ) : user.user_metadata.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                  ) : profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
                     user.email?.[0].toUpperCase()
                   )}
                 </div>
-              </Link>
+
+                <AnimatePresence>
+                  {showDropdown && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        className="absolute right-0 mt-3 w-56 p-2 bg-[#0d0d0d] border border-white/10 rounded-2xl shadow-3xl z-[100]"
+                    >
+                        <div className="p-3 border-b border-white/5 mb-1 px-4">
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none mb-1">Signed in as</p>
+                            <p className="text-xs font-bold truncate">{profile?.username || user.email}</p>
+                        </div>
+                        <Link href={`/profile/${profile?.username}`} className="nav-dropdown-btn">
+                            <UserIcon size={14} /> Profile
+                        </Link>
+                        <Link href="/settings" className="nav-dropdown-btn">
+                            <Settings size={14} /> Settings
+                        </Link>
+                        <button onClick={() => setShowAccountSwitcher(true)} className="nav-dropdown-btn">
+                            <Users size={14} /> Switch Account
+                        </button>
+                        <div className="h-px bg-white/5 my-1" />
+                        <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="nav-dropdown-btn text-red-500/80 hover:text-red-500">
+                            <LogOut size={14} /> Sign Out
+                        </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           ) : (
             <div className="relative">
@@ -151,12 +211,15 @@ export default function Navbar({ onSearchClick }: { onSearchClick: () => void })
                 <LogIn size={14} className="text-silver" />
                 <span>Sign In</span>
               </Link>
-
-              {/* Auth modal dropdown removed in favor of dedicated page */}
             </div>
           )}
         </div>
       </div>
+      <AccountSwitcher isOpen={showAccountSwitcher} onClose={() => setShowAccountSwitcher(false)} />
+      <style jsx>{`
+        .nav-dropdown-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1a1; transition: all 0.2s; }
+        .nav-dropdown-btn:hover { background: rgba(255, 255, 255, 0.05); color: white; }
+      `}</style>
     </nav>
   )
 }

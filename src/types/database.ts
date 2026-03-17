@@ -29,6 +29,8 @@ export interface Database {
           looking_for: string | null
           pinned_post_id: string | null
           public_key: string | null
+          last_seen: string | null
+          is_online: boolean
           created_at: string
         }
         Insert: {
@@ -50,6 +52,8 @@ export interface Database {
           looking_for?: string | null
           pinned_post_id?: string | null
           public_key?: string | null
+          last_seen?: string | null
+          is_online?: boolean
           created_at?: string
         }
         Update: {
@@ -71,6 +75,8 @@ export interface Database {
           looking_for?: string | null
           pinned_post_id?: string | null
           public_key?: string | null
+          last_seen?: string | null
+          is_online?: boolean
           created_at?: string
         }
       }
@@ -192,18 +198,24 @@ export interface Database {
           id: string
           participant_1: string
           participant_2: string
+          disappearing_messages: 'off' | '24h' | '7d' | 'lifetime'
+          muted_until: Json
           created_at: string
         }
         Insert: {
           id?: string
           participant_1: string
           participant_2: string
+          disappearing_messages?: 'off' | '24h' | '7d' | 'lifetime'
+          muted_until?: Json
           created_at?: string
         }
         Update: {
           id?: string
           participant_1?: string
           participant_2?: string
+          disappearing_messages?: 'off' | '24h' | '7d' | 'lifetime'
+          muted_until?: Json
           created_at?: string
         }
       }
@@ -213,6 +225,9 @@ export interface Database {
           conversation_id: string
           sender_id: string
           content: string
+          expires_at: string | null
+          read_at: string | null
+          deleted_for: string[]
           created_at: string
         }
         Insert: {
@@ -220,6 +235,9 @@ export interface Database {
           conversation_id: string
           sender_id: string
           content: string
+          expires_at?: string | null
+          read_at?: string | null
+          deleted_for?: string[]
           created_at?: string
         }
         Update: {
@@ -227,6 +245,9 @@ export interface Database {
           conversation_id?: string
           sender_id?: string
           content?: string
+          expires_at?: string | null
+          read_at?: string | null
+          deleted_for?: string[]
           created_at?: string
         }
       }
@@ -259,6 +280,29 @@ export interface Database {
           content?: string
           link?: string | null
           is_read?: boolean
+          created_at?: string
+        }
+      }
+      message_reactions: {
+        Row: {
+          id: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          user_id?: string
+          emoji?: string
           created_at?: string
         }
       }
