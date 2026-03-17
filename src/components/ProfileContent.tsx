@@ -187,7 +187,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
             </div>
             
             <div className="flex flex-col gap-3">
-              <h2 className="text-3xl font-black text-white tracking-tight">@{profile.username}</h2>
+              <h2 className="text-3xl font-black text-white tracking-tight">{profile.username}</h2>
               <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
                 <Lock size={14} className="text-gray-500" />
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
@@ -245,7 +245,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
                     <AtSign size={14} className="text-gray-500" />
-                    <span className="text-sm font-bold text-gray-400">@{profile.username}</span>
+                    <span className="text-sm font-bold text-gray-400">{profile.username}</span>
                   </div>
 
                   {/* Follower Stats */}
