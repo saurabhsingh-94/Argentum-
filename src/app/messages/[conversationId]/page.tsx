@@ -718,7 +718,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         {contextMenu && (
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                style={{ left: contextMenu.x, top: Math.min(contextMenu.y, window.innerHeight - 300) }}
+                style={{ 
+                    left: Math.min(contextMenu.x, typeof window !== 'undefined' ? window.innerWidth - 240 : contextMenu.x), 
+                    top: Math.min(contextMenu.y, typeof window !== 'undefined' ? window.innerHeight - 320 : contextMenu.y) 
+                }}
                 className="fixed z-[200] w-56 bg-[#0d0d0d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-3xl p-2 flex flex-col gap-1"
             >
                 {!contextMenu.isOwn && (
@@ -759,7 +762,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         {bgContextMenu && (
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                style={{ left: bgContextMenu.x, top: bgContextMenu.y }}
+                style={{ 
+                    left: Math.min(bgContextMenu.x, typeof window !== 'undefined' ? window.innerWidth - 270 : bgContextMenu.x), 
+                    top: Math.min(bgContextMenu.y, typeof window !== 'undefined' ? window.innerHeight - 320 : bgContextMenu.y) 
+                }}
                 className="fixed z-[200] w-64 bg-[#0d0d0d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-3xl p-2 flex flex-col gap-1"
             >
                 <button className="ctx-btn group relative">
