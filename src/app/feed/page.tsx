@@ -1,24 +1,36 @@
 // Build trigger: standardized routing and visibility updates
 import { createClient } from '@/lib/supabase/server'
 import FeedWithFilter from '@/components/FeedWithFilter'
+import SpeakHighlights from '@/components/SpeakHighlights'
 import { Flame, TrendingUp, Users, Target } from 'lucide-react'
 
 export default async function FeedPage() {
   const supabase = await createClient()
 
-  const { data: posts, count } = await supabase
-    .from('posts')
-    .select('*, users(id, username, display_name, avatar_url, bio, currently_building, twitter_username)', { count: 'exact' })
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .limit(10)
-
-  // Fetch trending tags (categories) dynamically
-  const { data: trendingData } = await supabase
-    .from('posts')
-    .select('category')
-    .eq('status', 'published')
-    .is('category', 'not.null')
+  const [
+    { data: posts, count },
+    { data: trendingData },
+    { data: highlights }
+  ] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('*, users(id, username, display_name, avatar_url, bio, currently_building)', { count: 'exact' })
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('posts')
+      .select('category')
+      .eq('status', 'published')
+      .is('category', 'not.null'),
+    supabase
+      .from('posts')
+      .select('*, users(id, username, display_name, avatar_url, bio, currently_building)')
+      .eq('status', 'published')
+      .eq('category', 'Speak')
+      .order('created_at', { ascending: false })
+      .limit(5)
+  ])
   
   const tagCounts: Record<string, number> = {}
   trendingData?.forEach((p: { category: string | null }) => {
@@ -51,6 +63,9 @@ export default async function FeedPage() {
                   Collective progress, logged on-chain.
                </p>
             </header>
+
+            {/* Speak Highlights / Broadcasts */}
+            <SpeakHighlights highlights={highlights as any || []} />
 
             <section>
               <FeedWithFilter initialPosts={posts || []} />

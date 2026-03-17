@@ -386,16 +386,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                         <Github size={18} />
                       </Link>
                     )}
-                    {profile.twitter_username && (
-                      <Link 
-                        href={`https://x.com/${profile.twitter_username.startsWith('@') ? profile.twitter_username.slice(1) : profile.twitter_username}`} 
-                        target="_blank" 
-                        className="p-2 rounded-lg bg-white/5 border border-white/10 text-silver hover:text-green-500 hover:border-green-500/30 hover:bg-green-500/5 transition-all"
-                        title="X (Twitter)"
-                      >
-                        <Twitter size={18} />
-                      </Link>
-                    )}
+
                     {profile.instagram_username && (
                       <Link 
                         href={`https://instagram.com/${profile.instagram_username.replace('@', '')}`} 
