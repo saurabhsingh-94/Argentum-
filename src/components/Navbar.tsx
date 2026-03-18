@@ -57,6 +57,14 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
           .single()
         
         if (prof) setProfile(prof)
+        else {
+          // If no profile in DB, create a minimal one from auth for the UI
+          setProfile({
+            display_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Builder',
+            username: authUser.user_metadata?.username || null,
+            avatar_url: authUser.user_metadata?.avatar_url || null
+          })
+        }
       }
     }
     setup()
@@ -232,8 +240,12 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                                   )}
                                </div>
                                <div className="flex flex-col min-w-0">
-                                  <span className="text-sm font-bold text-white truncate">{profile?.display_name || profile?.username}</span>
-                                  <span className="text-[10px] text-white/30 font-mono truncate">@{profile?.username}</span>
+                                  <span className="text-sm font-bold text-white truncate">
+                                    {profile?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Builder'}
+                                  </span>
+                                  <span className="text-[10px] text-white/30 font-mono truncate">
+                                    @{profile?.username || user?.user_metadata?.username || 'anonymous'}
+                                  </span>
                                </div>
                             </div>
                           </div>
