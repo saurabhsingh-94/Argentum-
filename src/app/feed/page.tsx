@@ -4,8 +4,22 @@ import FeedWithFilter from '@/components/FeedWithFilter'
 import SpeakHighlights from '@/components/SpeakHighlights'
 import { Flame, TrendingUp, Users, Target } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function FeedPage() {
   const supabase = await createClient()
+
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-black mb-4">Configuration Required</h1>
+          <p className="text-foreground/50 text-sm">Please ensure Supabase environment variables are configured in Vercel.</p>
+        </div>
+      </div>
+    )
+  }
+
 
   const [
     { data: posts, count },

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
 import FeedWithFilter from '@/components/FeedWithFilter'
 import { CheckCircle2, Users, Zap, Activity, ArrowRight, Github } from 'lucide-react'
 import Link from 'next/link'
