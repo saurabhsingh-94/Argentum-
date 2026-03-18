@@ -4,7 +4,22 @@ export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key) return null as any
+  if (!url || !key) {
+    // Return a robust mock using a Proxy during build
+    const mock: any = new Proxy(() => mock, {
+      get: (target, prop) => {
+        if (prop === 'then') return undefined
+        if (prop === 'auth') return {
+          getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          signOut: () => Promise.resolve({ error: null }),
+          setSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        }
+        return () => mock
+      }
+    })
+    return mock
+  }
 
   return createBrowserClient(url, key)
 }

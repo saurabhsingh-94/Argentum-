@@ -6,9 +6,18 @@ export async function createClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
-    // Return a dummy client or handle gracefully during build
-    // This prevents the build from crashing if env vars are missing
-    return null as any 
+    // Return a robust mock using a Proxy during build
+    const mock: any = new Proxy(() => mock, {
+      get: (target, prop) => {
+        if (prop === 'then') return undefined
+        if (prop === 'auth') return {
+          getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        }
+        return () => mock
+      }
+    })
+    return mock
   }
 
   const cookieStore = await cookies()
