@@ -244,7 +244,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                                     {profile?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Builder'}
                                   </span>
                                   <span className="text-[10px] text-foreground/30 font-mono truncate">
-                                    @{profile?.username || user?.user_metadata?.username || 'anonymous'}
+                                    @{profile?.username || user?.user_metadata?.username || user?.email?.split('@')[0] || 'anonymous'}
                                   </span>
                                </div>
                             </div>
