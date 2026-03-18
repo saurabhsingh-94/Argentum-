@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Github, Mail, Lock, LogIn, ArrowRight, UserPlus, AlertCircle } from 'lucide-react'
+import { Github, Mail, Lock, LogIn, ArrowRight, UserPlus, AlertCircle, AtSign } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  const [username, setUsername] = useState('')
   
   const supabase = createClient()
 
@@ -47,6 +49,12 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
+    if (!isLogin && !username) {
+      setError("Username is required")
+      setIsLoading(false)
+      return
+    }
+
     const { error } = isLogin 
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ 
@@ -54,16 +62,21 @@ export default function LoginPage() {
           password,
           options: {
             emailRedirectTo: `${getURL()}auth/callback`,
+            data: {
+              username: username.toLowerCase(),
+            }
           }
         })
 
     if (error) {
       setError(error.message)
-      setIsLoading(true)
+      setIsLoading(false)
     } else if (!isLogin) {
       setError("Check your email for the confirmation link!")
+      setIsLoading(false)
+    } else {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   return (
@@ -164,6 +177,30 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
+            <AnimatePresence>
+              {!isLogin && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-col gap-2 overflow-hidden"
+                >
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Username</label>
+                  <div className="relative">
+                    <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                    <input 
+                      type="text" 
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="johndoe"
+                      required={!isLogin}
+                      className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative">

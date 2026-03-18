@@ -9,6 +9,7 @@ import PresenceHandler from '@/components/PresenceHandler'
 import { useEffect, useState } from 'react'
 
 import { SearchProvider } from '@/context/SearchContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 
 export default function ClientLayout({
   children,
@@ -23,16 +24,22 @@ export default function ClientLayout({
     return () => setIsPageMounted(false)
   }, [pathname])
 
+  const isMessages = pathname?.startsWith('/messages')
+  const isProfile = pathname?.startsWith('/profile')
+  const isAuth = pathname?.startsWith('/auth')
+
   return (
-    <SearchProvider>
-      <BootLoader />
-      <Navbar />
-      <main className={`min-h-screen pt-4 transition-all duration-700 ease-out ${isPageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        {children}
-      </main>
-      <Footer />
-      <CommandPalette />
-      <PresenceHandler />
-    </SearchProvider>
+    <ThemeProvider>
+      <SearchProvider>
+        <BootLoader />
+        {!isMessages && !isProfile && !isAuth && <Navbar />}
+        <main className={`min-h-screen ${!isMessages && !isProfile && !isAuth ? 'pt-4' : ''} transition-all duration-700 ease-out ${isPageMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          {children}
+        </main>
+        {!isMessages && !isProfile && !isAuth && <Footer />}
+        <CommandPalette />
+        <PresenceHandler />
+      </SearchProvider>
+    </ThemeProvider>
   )
 }

@@ -82,9 +82,9 @@ export default function PostCard({
       viewport={{ once: true }}
       whileHover={{ y: -2 }}
       className={`
-        relative group bg-[#111] rounded-2xl border border-white/8 transition-all duration-300 hover:border-white/20 hover:shadow-2xl
+        relative group bg-card rounded-2xl border border-border transition-all duration-300 hover:border-foreground/20 hover:shadow-2xl
         ${post.verification_status === 'verified' ? 'border-l-2 border-l-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.05)]' : ''}
-        ${(post.category as any) === 'Speak' ? 'border-amber-500/30 bg-gradient-to-br from-[#111] to-[#1a140a] hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.03)]' : ''}
+        ${(post.category as any) === 'Speak' ? 'border-amber-500/30 bg-gradient-to-br from-card to-amber-500/5 hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.03)]' : ''}
       `}
     >
       <div className="p-5 flex flex-col h-full">
@@ -141,7 +141,7 @@ export default function PostCard({
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute right-0 mt-2 w-48 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-2xl z-[100] p-1"
+                  className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl z-[100] p-1"
                 >
                   <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
                     <Bookmark size={14} /> Save to collection
@@ -185,7 +185,7 @@ export default function PostCard({
           </p>
 
           {codeSnippet && (
-            <div className="mt-2 bg-[#0a0a0a] rounded-xl border border-white/5 p-3 overflow-hidden font-mono text-[11px] text-gray-500 opacity-60 group-hover:opacity-100 transition-opacity">
+            <div className="mt-2 bg-background rounded-xl border border-border p-3 overflow-hidden font-mono text-[11px] text-gray-500 opacity-60 group-hover:opacity-100 transition-opacity">
               <pre className="line-clamp-4">
                 <code>{codeSnippet}</code>
               </pre>

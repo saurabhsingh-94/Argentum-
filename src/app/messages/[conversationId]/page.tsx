@@ -94,12 +94,47 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [showBackupModal, setShowBackupModal] = useState(false)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior })
+  }
+
+  // Decryption function that doesn't depend on stale state
+  const decryptContent = (content: string, isOwn: boolean, conv: any, userId: string) => {
+    if (content.startsWith('[IMAGE]:')) return content
+    
+    const secretKey = getStoredSecretKey()
+    if (!secretKey) return "Encrypted message"
+
+    const otherProfile = conv.participant_1 === userId ? conv.participant_2_profile : conv.participant_1_profile
+    const senderProfile = conv.participant_1 === (isOwn ? userId : otherProfile.id) ? conv.participant_1_profile : conv.participant_2_profile
+    const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
+    
+    return decryptMessage(content, decryptionKey, secretKey) || "Encrypted message"
+  }
+
+  const fetchMessages = async (conv: any, userId: string) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, message_reactions(*)')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+
+    if (error) return
+
+    const processedMessages = data.map((msg: any) => ({
+      ...msg,
+      decryptedContent: decryptContent(msg.content, msg.sender_id === userId, conv, userId),
+      expired: msg.expires_at && new Date(msg.expires_at) < new Date()
+    })).filter(Boolean)
+    
+    setMessages(processedMessages)
   }
 
   useEffect(() => {
@@ -118,7 +153,6 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         setShowRecoveryModal(true)
       }
 
-      // Fetch conversation details with disappearing settings
       const { data: conv, error: convError } = await supabase
         .from('conversations')
         .select(`
@@ -138,18 +172,15 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       setConversation(conv)
       setOtherParticipant(other)
 
-      // Load LocalStorage Features
       const muted = localStorage.getItem(`muted_${conversationId}`) === 'true'
       setIsMuted(muted)
       const savedNickname = localStorage.getItem(`nickname_${other.id}`) || ''
       setNickname(savedNickname)
 
-      // Initial messages fetch
       await fetchMessages(conv, user.id)
       setLoading(false)
       setTimeout(() => scrollToBottom('auto'), 100)
 
-      // Mark as read on entry
       await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
@@ -157,31 +188,40 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         .neq('sender_id', user.id)
         .is('read_at', null)
 
-      // Subscribe to real-time updates as per user request
       const channel = supabase
         .channel(`messages:${conversationId}`)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
-          async (payload: any) => {
-            const processed = processMessage(payload.new, conv, user.id)
-            if (processed) {
-              setMessages((prev: any[]) => [...prev, processed])
-              setTimeout(() => scrollToBottom(), 50)
-            }
+          (payload: any) => {
+            setMessages((prev: any[]) => {
+              const msg = payload.new
+              const processed = {
+                ...msg,
+                decryptedContent: decryptContent(msg.content, msg.sender_id === user.id, conv, user.id),
+                expired: msg.expires_at && new Date(msg.expires_at) < new Date()
+              }
+              return [...prev, processed]
+            })
+            setTimeout(() => scrollToBottom(), 50)
           }
         )
-        // Keep existing UPDATE/DELETE handlers for receipts and unsends
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
-          async (payload: any) => {
-            const processed = processMessage(payload.new, conv, user.id)
-            if (processed) {
-              setMessages((prev: any[]) => prev.map(m => m.id === payload.new.id ? { ...m, ...processed } : m))
-            } else {
-              setMessages((prev: any[]) => prev.filter(m => m.id !== payload.new.id))
-            }
+          (payload: any) => {
+            setMessages((prev: any[]) => prev.map(m => {
+              if (m.id === payload.new.id) {
+                const msg = payload.new
+                return {
+                  ...m,
+                  ...msg,
+                  decryptedContent: decryptContent(msg.content, msg.sender_id === user.id, conv, user.id),
+                  expired: msg.expires_at && new Date(msg.expires_at) < new Date()
+                }
+              }
+              return m
+            }))
           }
         )
         .on(
@@ -191,33 +231,24 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
             setMessages((prev: any[]) => prev.filter(m => m.id !== payload.old.id))
           }
         )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'users', filter: `id=eq.${other.id}` },
-          (payload: any) => {
-            setOtherParticipant((prev: any) => ({ ...prev, ...payload.new }))
-          }
-        )
-        .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'conversations', filter: `id=eq.${conversationId}` },
-            (payload: any) => {
-                setConversation((prev: any) => ({ ...prev, ...payload.new }))
-            }
-        )
         .subscribe();
 
-      // Subscribe to reactions as per user request
       const reactionsChannel = supabase
         .channel(`reactions:${conversationId}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'message_reactions' },
-          (payload: any) => {
-            // Refetch or update local state for the specific message
+          async (payload: any) => {
             const messageId = payload.new?.message_id || payload.old?.message_id;
             if (messageId) {
-                refreshMessageReactions(messageId);
+                const { data: reactions } = await supabase
+                  .from('message_reactions')
+                  .select('*')
+                  .eq('message_id', messageId);
+                
+                setMessages((prev: any[]) => prev.map(m => 
+                    m.id === messageId ? { ...m, message_reactions: reactions || [] } : m
+                ));
             }
           }
         )
@@ -229,91 +260,34 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       };
     }
 
-    let channel: any
-    setup().then(c => { channel = c })
+    setup()
 
-    // ... existing interval logic ...
-
-    // Expiry check interval
     const interval = setInterval(() => {
-        checkExpiries()
+        const now = new Date()
+        setMessages((prev: any[]) => prev.map(msg => {
+            if (msg.expires_at && new Date(msg.expires_at) < now && !msg.deleted_for?.includes(currentUser?.id)) {
+                return { ...msg, expired: true }
+            }
+            return msg
+        }))
     }, 30000)
 
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
-      if (!isEditingId) setContextMenu(null)
+      if (!editingId) setContextMenu(null)
       setBgContextMenu(null)
     }
     document.addEventListener('click', handleClickOutside)
     return () => {
         document.removeEventListener('click', handleClickOutside)
         clearInterval(interval)
-        if (channel) supabase.removeChannel(channel)
     }
   }, [conversationId])
 
-  const isEditingId = editingId
+  const filteredMessages = searchQuery.trim() 
+    ? messages.filter(m => m.decryptedContent?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages
 
-  const checkExpiries = () => {
-      const now = new Date()
-      setMessages((prev: any[]) => prev.map(msg => {
-          if (msg.expires_at && new Date(msg.expires_at) < now && !msg.deleted_for?.includes(currentUser.id)) {
-              // Usually we'd update DB here but local UI feedback is first
-              return { ...msg, expired: true }
-          }
-          return msg
-      }))
-  }
-
-  const processMessage = (msg: any, convData: any, userId: string) => {
-    if (msg.deleted_for?.includes(userId)) return null
-    
-    const secretKey = getStoredSecretKey()
-    let decrypted = msg.content
-    
-    if (!msg.content.startsWith('[IMAGE]:')) {
-        const isOwn = msg.sender_id === userId
-        const otherProfile = convData.participant_1 === userId ? convData.participant_2_profile : convData.participant_1_profile
-        const senderProfile = convData.participant_1 === msg.sender_id ? convData.participant_1_profile : convData.participant_2_profile
-        const decryptionKey = isOwn ? otherProfile.public_key : senderProfile.public_key
-        
-        if (secretKey) {
-          decrypted = decryptMessage(msg.content, decryptionKey, secretKey) || "Encrypted message"
-        } else {
-          decrypted = "Encrypted message"
-        }
-    }
-
-    return {
-      ...msg,
-      decryptedContent: decrypted,
-      expired: msg.expires_at && new Date(msg.expires_at) < new Date()
-    }
-  }
-
-  const refreshMessageReactions = async (messageId: string) => {
-      const { data: reactions } = await supabase
-        .from('message_reactions')
-        .select('*')
-        .eq('message_id', messageId);
-      
-      setMessages((prev: any[]) => prev.map(m => 
-          m.id === messageId ? { ...m, message_reactions: reactions || [] } : m
-      ));
-  }
-
-  const fetchMessages = async (conv: any, userId: string) => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*, message_reactions(*)')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-
-    if (error) return
-
-    const processedMessages = data.map((msg: any) => processMessage(msg, conv, userId)).filter(Boolean)
-    setMessages(processedMessages)
-  }
 
   const toggleReaction = async (messageId: string, emoji: string) => {
       if (!currentUser) return;
@@ -546,7 +520,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   }
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white overflow-hidden relative selection:bg-silver/30" onContextMenu={handleBgContextMenu}>
+    <div className="flex h-screen bg-background text-foreground overflow-hidden relative selection:bg-silver/30" onContextMenu={handleBgContextMenu}>
       <div className="noise-bg absolute inset-0 pointer-events-none opacity-[0.03]" />
       <div className="mesh-gradient-bg opacity-5 absolute inset-0 pointer-events-none" />
 
@@ -556,7 +530,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl sticky top-0 z-[60]"
+          className="flex items-center justify-between px-6 py-4 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-[60]"
         >
           <div className="flex items-center gap-4">
             <Link href="/messages" className="p-2 hover:bg-white/5 rounded-xl transition-all">
@@ -564,7 +538,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
             </Link>
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setShowProfilePanel(true)}>
               <div className="relative">
-                <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center shadow-glow-sm">
+                <div className="w-10 h-10 rounded-full border border-border overflow-hidden bg-card flex items-center justify-center shadow-glow-sm">
                   {otherParticipant.avatar_url ? (
                     <img 
                       src={otherParticipant.avatar_url} 
@@ -580,7 +554,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                   )}
                 </div>
                 {otherParticipant.is_online && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0a]" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
                 )}
               </div>
               <div className="flex flex-col">
@@ -600,8 +574,30 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           </div>
 
           <div className="flex items-center gap-2">
-             <button className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
-                <Search size={20} />
+             <AnimatePresence>
+                {showSearch && (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 200, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <input 
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search messages..."
+                      autoFocus
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-white/20"
+                    />
+                  </motion.div>
+                )}
+             </AnimatePresence>
+             <button 
+                onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchQuery('') }}
+                className={`p-2 rounded-xl transition-all ${showSearch ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
+              >
+                {showSearch ? <X size={20} /> : <Search size={20} />}
              </button>
              <div className="relative">
                  <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
@@ -643,15 +639,17 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
         {/* Messages List */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-          {messages.length === 0 ? (
+          {filteredMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 opacity-40">
               <div className="w-16 h-16 rounded-[2rem] border border-white/10 flex items-center justify-center text-gray-600">
                 <Lock size={24} />
               </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 text-center px-10">Messages are end-to-end encrypted. No one else can read them.</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 text-center px-10">
+                {searchQuery ? "No messages found matching your search." : "Messages are end-to-end encrypted. No one else can read them."}
+              </p>
             </div>
           ) : (
-            messages.map((msg, idx) => {
+            filteredMessages.map((msg, idx) => {
               const isOwn = msg.sender_id === currentUser.id
               const isImage = msg.content.startsWith('[IMAGE]:')
               const imageUrl = isImage ? msg.content.replace('[IMAGE]:', '') : null

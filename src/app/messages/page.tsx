@@ -132,20 +132,20 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-[#050505] flex items-center justify-center">
+      <div className="h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-silver animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="h-screen bg-[#050505] flex overflow-hidden">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Left Panel: Conversation List */}
       <motion.div 
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full md:w-[320px] border-r border-white/5 bg-[#0a0a0a] flex flex-col z-20"
+        className="w-full md:w-[320px] border-r border-border bg-card flex flex-col z-20"
       >
         {/* Header */}
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -230,7 +230,7 @@ export default function MessagesPage() {
                   className="px-4 py-4 flex items-center gap-4 hover:bg-white/[0.03] transition-all group border-l-2 border-transparent"
                 >
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center text-silver group-hover:border-white/20 transition-all">
+                    <div className="w-12 h-12 rounded-full border border-border overflow-hidden bg-card flex items-center justify-center text-silver group-hover:border-foreground/20 transition-all">
                       {conv.otherParticipant.avatar_url ? (
                         <img 
                           src={conv.otherParticipant.avatar_url} 
@@ -275,7 +275,7 @@ export default function MessagesPage() {
 
         {/* Profile Footer */}
         {user && (
-           <div className="p-4 border-t border-white/5 bg-[#0d0d0d]/50 backdrop-blur-xl">
+           <div className="p-4 border-t border-border bg-card/50 backdrop-blur-xl">
              <div className="flex items-center gap-3 mb-4 px-2">
                <div className="w-9 h-9 rounded-xl border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center text-silver font-black text-xs">
                  {profile?.avatar_url ? (

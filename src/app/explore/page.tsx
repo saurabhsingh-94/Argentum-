@@ -72,7 +72,7 @@ function ExploreContent() {
   )
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 lg:px-6 py-10">
         <header className="mb-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -84,7 +84,7 @@ function ExploreContent() {
                </p>
             </div>
             
-            <div className="flex p-1 bg-white/5 rounded-full border border-white/5 md:w-auto w-full">
+            <div className="flex p-1 bg-foreground/5 rounded-full border border-border md:w-auto w-full">
               <button
                 onClick={() => setActiveTab('builds')}
                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
@@ -107,13 +107,13 @@ function ExploreContent() {
           <div className="flex flex-col lg:flex-row gap-6 items-center">
             {/* Search */}
             <div className="relative flex-1 w-full group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-white transition-colors" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20 group-focus-within:text-foreground transition-colors" size={18} />
               <input
                 type="text"
                 placeholder={`Search ${activeTab === 'builds' ? 'projects, code, tags...' : 'builders, skills, names...'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10"
+                className="w-full bg-card border border-border rounded-2xl py-4 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:border-foreground/30 transition-all placeholder:text-foreground/10"
               />
             </div>
 
@@ -126,7 +126,7 @@ function ExploreContent() {
                   className={`flex items-center gap-2 px-5 py-2 rounded-full border text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
                     selectedCategory === cat.id 
                       ? 'bg-green-500 border-green-500 text-black shadow-lg shadow-green-900/20' 
-                      : 'bg-white/5 border-white/5 text-gray-500 hover:text-white hover:border-white/20'
+                      : 'bg-foreground/5 border-border text-foreground/50 hover:text-foreground hover:border-foreground/20'
                   }`}
                 >
                   {cat.icon}
@@ -209,7 +209,7 @@ function ExploreContent() {
 export default function ExplorePage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-32 gap-6 bg-[#050505] min-h-screen">
+      <div className="flex flex-col items-center justify-center py-32 gap-6 bg-background min-h-screen">
         <Loader2 className="animate-spin text-green-500" size={40} />
       </div>
     }>

@@ -45,7 +45,7 @@ export default async function FeedPage() {
     .slice(0, 5)
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 lg:px-6 py-10">
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Main Feed */}
@@ -75,33 +75,33 @@ export default async function FeedPage() {
           {/* Sidebar */}
           <aside className="w-full lg:w-80 flex flex-col gap-8">
             {/* Stats Overview */}
-            <div className="bg-[#111] border border-white/5 rounded-2xl p-6 shadow-2xl">
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-2xl">
                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Network Stats</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Network Stats</h3>
                   <Target size={14} className="text-green-500" />
                </div>
                <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-end">
-                     <span className="text-xs text-gray-400">Total Build Logs</span>
+                     <span className="text-xs text-foreground/40">Total Build Logs</span>
                      <span className="text-2xl font-black">{count || 0}</span>
                   </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 w-full bg-foreground/5 rounded-full overflow-hidden">
                      <div className="h-full bg-green-500 w-[65%]" />
                   </div>
                </div>
             </div>
 
             {/* Trending Tags */}
-            <div className="bg-[#111] border border-white/5 rounded-2xl p-6 shadow-2xl">
-               <div className="flex items-center gap-2 mb-6 text-white">
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-2xl">
+               <div className="flex items-center gap-2 mb-6">
                   <TrendingUp size={16} className="text-blue-500" />
                   <h3 className="text-xs font-black uppercase tracking-widest">Trending Tags</h3>
                </div>
                <div className="flex flex-col gap-4">
                   {trendingTags.length > 0 ? trendingTags.map(({ tag, count }) => (
                     <div key={tag} className="flex items-center justify-between group cursor-pointer">
-                       <span className="text-sm text-gray-400 group-hover:text-white transition-colors">#{tag}</span>
-                       <span className="text-[10px] font-mono text-gray-600">{count} posts</span>
+                       <span className="text-sm text-foreground/40 group-hover:text-foreground transition-colors">#{tag}</span>
+                       <span className="text-[10px] font-mono text-foreground/20">{count} posts</span>
                     </div>
                   )) : (
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center py-4">No trending tags yet</p>
@@ -110,8 +110,8 @@ export default async function FeedPage() {
             </div>
 
             {/* Top Builders */}
-            <div className="bg-[#111] border border-white/5 rounded-2xl p-6 shadow-2xl">
-               <div className="flex items-center gap-2 mb-6 text-white">
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-2xl">
+               <div className="flex items-center gap-2 mb-6">
                   <Users size={16} className="text-purple-500" />
                   <h3 className="text-xs font-black uppercase tracking-widest">Top Builders</h3>
                </div>

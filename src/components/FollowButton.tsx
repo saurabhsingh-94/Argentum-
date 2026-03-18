@@ -18,6 +18,10 @@ export default function FollowButton({ followingId, initialIsFollowing, onCountC
   const supabase = createClient()
 
   useEffect(() => {
+    setIsFollowing(initialIsFollowing)
+  }, [initialIsFollowing])
+
+  useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       setCurrentUserId(session?.user?.id || null)

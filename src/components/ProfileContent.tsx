@@ -168,7 +168,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-silver/30">
+    <div className="min-h-screen bg-background text-foreground selection:bg-silver/30">
       {/* Hero Header Area */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-[#050505]" />
@@ -232,7 +232,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                   style={getAnimationStyle('fade', 0, 'avatar')}
                 >
                   <div className="absolute -inset-1 bg-gradient-to-br from-silver/40 to-white/5 rounded-[2.2rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] border-2 border-silver/20 bg-[#0d0d0d] overflow-hidden flex items-center justify-center relative">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] border-2 border-silver/20 bg-card overflow-hidden flex items-center justify-center relative">
                     {profile.avatar_url ? (
                       <img 
                         src={profile.avatar_url} 
@@ -256,7 +256,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                   style={getAnimationStyle('slideLeft', 100)}
                 >
                   <div className="flex items-center gap-3">
-                    <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-glow">
+                    <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter drop-shadow-glow">
                       {profile.display_name}
                     </h1>
                     {!profile.is_public && (
@@ -277,7 +277,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                       onClick={() => { setFollowModalTab('followers'); setIsFollowModalOpen(true); }}
                       className="flex items-center gap-1.5 hover:opacity-80 transition-all group"
                     >
-                      <span className="text-sm font-black text-white group-hover:silver-glow-text">{followCounts.followers}</span>
+                      <span className="text-sm font-black text-foreground group-hover:silver-glow-text">{followCounts.followers}</span>
                       <span className="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Followers</span>
                     </button>
                     <div className="w-1 h-1 rounded-full bg-gray-800" />
@@ -285,7 +285,7 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
                       onClick={() => { setFollowModalTab('following'); setIsFollowModalOpen(true); }}
                       className="flex items-center gap-1.5 hover:opacity-80 transition-all group"
                     >
-                      <span className="text-sm font-black text-white group-hover:silver-glow-text">{followCounts.following}</span>
+                      <span className="text-sm font-black text-foreground group-hover:silver-glow-text">{followCounts.following}</span>
                       <span className="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300">Following</span>
                     </button>
                   </div>

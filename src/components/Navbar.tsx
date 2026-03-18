@@ -85,14 +85,14 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
   return (
     <>
-      <nav className="sticky top-0 z-[100] w-full border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-[100] w-full border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
           {/* Left Section: Logo */}
           <div className="flex items-center gap-2 shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }}
-                className="w-8 h-8 rounded-lg border border-silver/30 flex items-center justify-center bg-[#111] shadow-glow-silver/0 group-hover:shadow-glow-silver/20 group-hover:border-silver/50 transition-all duration-300"
+                className="w-8 h-8 rounded-lg border border-silver/30 flex items-center justify-center bg-card shadow-glow-silver/0 group-hover:shadow-glow-silver/20 group-hover:border-silver/50 transition-all duration-300"
               >
                 <span className="text-xs font-black text-white italic group-hover:silver-glow-text">Ag</span>
               </motion.div>
@@ -129,7 +129,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
               onClick={() => setIsSearchOpen(true)}
               className="flex-1 max-w-xl relative hidden md:block group cursor-text"
             >
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/[0.02] group-hover:border-white/20 transition-all">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-border bg-foreground/[0.02] group-hover:border-foreground/20 transition-all">
                 <Search size={16} className="text-white/20" />
                 <div className="text-sm text-white/30 flex-1">Search builds, builders, tags...</div>
                 <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 bg-white/5">
@@ -154,10 +154,10 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                 <div className="flex items-center gap-1 md:gap-3">
                   <Link 
                     href="/messages"
-                    className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all relative"
+                    className="w-9 h-9 flex items-center justify-center text-foreground/40 hover:text-foreground hover:bg-foreground/5 rounded-full transition-all relative"
                   >
                     <MessageCircle size={18} />
-                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-green-500 rounded-full border-2 border-[#0a0a0a]" />
+                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-green-500 rounded-full border-2 border-background" />
                   </Link>
 
                   <NotificationBell />
@@ -186,7 +186,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                 <div className="relative" ref={dropdownRef}>
                   <button 
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className="w-9 h-9 rounded-full border border-white/10 overflow-hidden bg-[#111] flex items-center justify-center group/avatar hover:border-white/30 transition-all"
+                    className="w-9 h-9 rounded-full border border-border overflow-hidden bg-card flex items-center justify-center group/avatar hover:border-foreground/30 transition-all"
                   >
                     {profile?.avatar_url ? (
                       <img 
@@ -211,9 +211,9 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                           initial={{ opacity: 0, scale: 0.95, y: 10 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                          className="absolute right-0 mt-3 w-60 bg-[#111] border border-white/10 rounded-2xl shadow-3xl z-[150] overflow-hidden"
+                          className="absolute right-0 mt-3 w-60 bg-card border border-border rounded-2xl shadow-3xl z-[150] overflow-hidden shadow-2xl"
                       >
-                          <div className="p-4 bg-white/[0.02] border-b border-white/5">
+                          <div className="p-4 bg-foreground/[0.02] border-b border-border">
                             <div className="flex items-center gap-3">
                                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                                   {profile?.avatar_url ? (
