@@ -50,18 +50,26 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
         setUser(authUser)
-        const { data: prof } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-        
-        if (prof) setProfile(prof)
-        else {
-          // If no profile in DB, create a minimal one from auth for the UI
+        const { data: profileData, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Navbar profile fetch error:', profileError)
+      }
+
+        if (profileData) {
+          setProfile(profileData)
+        } else {
+          // Create a minimal virtual profile from metadata
+          const virtualName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Builder'
+          const virtualUsername = authUser.user_metadata?.username || authUser.user_metadata?.user_name || authUser.user_metadata?.preferred_username || null
+          
           setProfile({
-            display_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Builder',
-            username: authUser.user_metadata?.username || null,
+            display_name: virtualName,
+            username: virtualUsername,
             avatar_url: authUser.user_metadata?.avatar_url || null
           })
         }

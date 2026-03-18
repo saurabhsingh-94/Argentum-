@@ -5,25 +5,24 @@ export function createClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key) {
-    // Only return the mock on the server (prerendering/SSR)
-    // In the browser, returning the mock can cause confusing UI behavior
-    if (typeof window === 'undefined') {
-      const mock: any = new Proxy({}, {
-        get: (target, prop) => {
-          if (prop === 'then') {
-            return (resolve: any) => resolve({ data: [], error: null, count: 0 })
-          }
-          if (prop === 'auth') return {
-            getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-            signOut: () => Promise.resolve({ error: null }),
-            setSession: () => Promise.resolve({ data: { session: null }, error: null }),
-          }
-          return () => mock
-        }
-      })
-      return mock
+    if (typeof window !== 'undefined') {
+      console.error("Supabase environment variables are missing! Falling back to mock client.")
     }
+    const mock: any = new Proxy({}, {
+      get: (target, prop) => {
+        if (prop === 'then') {
+          return (resolve: any) => resolve({ data: [], error: null, count: 0 })
+        }
+        if (prop === 'auth') return {
+          getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          signOut: () => Promise.resolve({ error: null }),
+          setSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        }
+        return () => mock
+      }
+    })
+    return mock
   }
 
   return createBrowserClient(url!, key!)
