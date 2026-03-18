@@ -29,6 +29,10 @@ export interface Database {
           looking_for: string | null
           pinned_post_id: string | null
           public_key: string | null
+          encrypted_private_key: string | null
+          key_backup_method: string
+          key_backup_hint: string | null
+          key_backup_created_at: string | null
           last_seen: string | null
           is_online: boolean
           created_at: string
@@ -52,6 +56,10 @@ export interface Database {
           looking_for?: string | null
           pinned_post_id?: string | null
           public_key?: string | null
+          encrypted_private_key?: string | null
+          key_backup_method?: string
+          key_backup_hint?: string | null
+          key_backup_created_at?: string | null
           last_seen?: string | null
           is_online?: boolean
           created_at?: string
@@ -75,6 +83,10 @@ export interface Database {
           looking_for?: string | null
           pinned_post_id?: string | null
           public_key?: string | null
+          encrypted_private_key?: string | null
+          key_backup_method?: string
+          key_backup_hint?: string | null
+          key_backup_created_at?: string | null
           last_seen?: string | null
           is_online?: boolean
           created_at?: string
