@@ -170,7 +170,8 @@ export default function MessagesPage() {
         </div>
 
          {/* Backup Nag Banner */}
-        {encryptionStatus === 'ready' && !profile?.key_backup_method && (
+        {encryptionStatus === 'ready' && 
+          (!profile?.key_backup_method || profile.key_backup_method === 'none') && (
           <div className="p-4 mx-4 mb-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
             <div className="flex gap-3">
               <ShieldAlert size={16} className="text-orange-500 shrink-0" />

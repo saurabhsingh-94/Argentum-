@@ -1,10 +1,65 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 const ADMIN_SEGMENT = process.env.ADMIN_SECRET_URL_SEGMENT ?? '';
 const ALLOWED_IPS = process.env.ALLOWED_ADMIN_IPS?.split(',').map(s => s.trim()) ?? [];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
   try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          },
+          remove(name: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+          },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
       request.headers.get('x-real-ip') ||
@@ -19,30 +74,38 @@ export function middleware(request: NextRequest) {
       path === '/admin' ||
       (path.startsWith('/admin/') && !isAdminPath);
 
-    const token = request.cookies.get('sb-access-token')?.value;
-
-    // 🪤 Honeypot (SAFE)
+    // 🪤 Honeypot
     if (isHoneypot) {
       return NextResponse.rewrite(new URL('/not-found', request.url));
     }
 
-    // 🔐 Admin protection (LIGHT ONLY)
+    // 🔐 Admin protection
     if (isAdminPath) {
-      // IP check
       if (ALLOWED_IPS.length > 0 && !ALLOWED_IPS.includes(ip)) {
         return NextResponse.rewrite(new URL('/not-found', request.url));
       }
-
-      // Auth check
-      if (!token) {
-        return NextResponse.redirect(new URL('/auth/login', request.url));
+      if (!user) {
+        return NextResponse.redirect(new URL('/auth/login', request.url))
       }
     }
 
-    return NextResponse.next();
+    // 🚀 Force Onboarding for logged in users without username
+    if (user && path !== '/onboarding' && !path.startsWith('/auth') && !path.startsWith('/api') && path !== '/not-found') {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile?.username) {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+    }
+
+    return response;
   } catch (error) {
     console.error('Middleware error:', error);
-    return NextResponse.next();
+    return response;
   }
 }
 
@@ -50,4 +113,4 @@ export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}
