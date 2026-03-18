@@ -251,11 +251,11 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                           </div>
                    
                            <div className="p-1">
-                            <DropdownItem icon={<UserIcon size={14} />} label="View Profile" href={profile?.username ? `/profile/${profile.username}` : (user ? '/onboarding' : '/auth/login')} />
-                            <DropdownItem icon={<Edit3 size={14} />} label="Edit Profile" href={profile?.username ? `/profile/${profile.username}?edit=true` : '/settings'} />
-                            <DropdownItem icon={<Bell size={14} />} label="Notifications" href="/notifications" />
-                            <DropdownItem icon={<MessageCircle size={14} />} label="Messages" href="/messages" />
-                            <DropdownItem icon={<Settings size={14} />} label="Account Settings" href="/settings" />
+                             <DropdownItem icon={<UserIcon size={14} />} label="View Profile" href={profile?.username ? `/profile/${profile.username}` : (user ? '/onboarding' : '/auth/login')} onClick={() => setShowDropdown(false)} />
+                             <DropdownItem icon={<Edit3 size={14} />} label="Edit Profile" href={profile?.username ? `/profile/${profile.username}?edit=true` : (user ? '/settings' : '/auth/login')} onClick={() => setShowDropdown(false)} />
+                             <DropdownItem icon={<Bell size={14} />} label="Notifications" href="/notifications" onClick={() => setShowDropdown(false)} />
+                             <DropdownItem icon={<MessageCircle size={14} />} label="Messages" href="/messages" onClick={() => setShowDropdown(false)} />
+                             <DropdownItem icon={<Settings size={14} />} label="Account Settings" href="/settings" onClick={() => setShowDropdown(false)} />
                             
                             <div className="h-px bg-border my-1" />
                             <button 
@@ -309,9 +309,13 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
   )
 }
 
-function DropdownItem({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
+function DropdownItem({ icon, label, href, onClick }: { icon: React.ReactNode, label: string, href: string, onClick?: () => void }) {
   return (
-    <Link href={href} className="flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all">
+    <Link 
+      href={href} 
+      onClick={onClick}
+      className="flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all"
+    >
       {icon}
       <span>{label}</span>
     </Link>
