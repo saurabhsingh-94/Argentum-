@@ -27,13 +27,25 @@ export default function AccountSwitcher({ isOpen, onClose }: { isOpen: boolean, 
     }
   }, [isOpen])
 
-  const switchAccount = async (account: SavedAccount) => {
+  const switchAccount = async (account: any) => {
     setLoading(account.id)
     try {
-      // In a real scenario, we'd need a token or something. 
-      // Since we don't have that, we'll redirect to login but maybe with a hint?
-      // Based on requirements: "auto-fills login and attempts sign in"
-      // We'll just sign out and go to login for now as per "Add another account" logic.
+      if (account.session?.access_token && account.session?.refresh_token) {
+        const { error } = await supabase.auth.setSession({
+          access_token: account.session.access_token,
+          refresh_token: account.session.refresh_token
+        })
+        if (error) throw error
+        onClose()
+        router.refresh()
+      } else {
+        // Fallback if session is missing
+        await supabase.auth.signOut()
+        router.push(`/auth/login?email=${account.email}`)
+      }
+    } catch (err: any) {
+      console.error('Failed to switch account:', err)
+      alert("Session expired. Please log in again.")
       await supabase.auth.signOut()
       router.push(`/auth/login?email=${account.email}`)
     } finally {

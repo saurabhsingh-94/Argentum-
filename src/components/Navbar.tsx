@@ -92,9 +92,9 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             <Link href="/" className="flex items-center gap-2.5 group">
               <motion.div 
                 whileHover={{ scale: 1.1, rotate: 5 }}
-                className="w-8 h-8 rounded-lg border border-silver/30 flex items-center justify-center bg-card shadow-glow-silver/0 group-hover:shadow-glow-silver/20 group-hover:border-silver/50 transition-all duration-300"
+                className="w-8 h-8 rounded-lg border border-border flex items-center justify-center bg-card shadow-premium group-hover:border-silver transition-all duration-300"
               >
-                <span className="text-xs font-black text-white italic group-hover:silver-glow-text">Ag</span>
+                <span className="text-xs font-black text-foreground italic group-hover:silver-glow-text">Ag</span>
               </motion.div>
               <motion.span 
                 whileHover={{ letterSpacing: "0.5em" }}
@@ -113,7 +113,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                   key={link.name} 
                   href={link.href} 
                   className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all relative py-1
-                    ${pathname === link.href ? 'text-white' : 'text-white/40 hover:text-white'}
+                    ${pathname === link.href ? 'text-foreground' : 'text-foreground/40 hover:text-foreground'}
                   `}
                 >
                   {link.name}
@@ -130,10 +130,10 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
               className="flex-1 max-w-xl relative hidden md:block group cursor-text"
             >
               <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-border bg-foreground/[0.02] group-hover:border-foreground/20 transition-all">
-                <Search size={16} className="text-white/20" />
-                <div className="text-sm text-white/30 flex-1">Search builds, builders, tags...</div>
-                <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 bg-white/5">
-                  <span className="text-[8px] font-black text-white/30 tracking-widest uppercase">Cmd+K</span>
+                <Search size={16} className="text-foreground/20" />
+                <div className="text-sm text-foreground/30 flex-1">Search builds, builders, tags...</div>
+                <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded border border-border bg-foreground/5">
+                  <span className="text-[8px] font-black text-foreground/30 tracking-widest uppercase">Cmd+K</span>
                 </div>
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             {/* Mobile Search Trigger (Always Visible) */}
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="w-9 h-9 flex md:hidden items-center justify-center text-white/40 hover:text-white hover:bg-white/5 rounded-full transition-all mr-1"
+              className="w-9 h-9 flex md:hidden items-center justify-center text-foreground/40 hover:text-foreground hover:bg-foreground/5 rounded-full transition-all mr-1"
             >
               <Search size={18} />
             </button>
@@ -179,7 +179,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 group/streak hover:border-orange-500/40 transition-all"
                 >
                    <Flame size={14} className="text-orange-500 group-hover:scale-110 transition-transform" />
-                   <span className="text-xs font-black text-white">{profile?.streak_count || 0}</span>
+                   <span className="text-xs font-black text-foreground">{profile?.streak_count || 0}</span>
                 </button>
 
                 {/* Profile Circle */}
@@ -246,7 +246,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                             <div className="h-px bg-white/5 my-1" />
                             <button 
                               onClick={() => { setShowAccountSwitcher(true); setShowDropdown(false); }}
-                              className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                              className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all"
                             >
                               <Users size={14} /> Switch Account
                             </button>
@@ -297,7 +297,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
 function DropdownItem({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
   return (
-    <Link href={href} className="flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+    <Link href={href} className="flex items-center gap-3 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-xl transition-all">
       {icon}
       <span>{label}</span>
     </Link>
@@ -306,7 +306,7 @@ function DropdownItem({ icon, label, href }: { icon: React.ReactNode, label: str
 
 function MobileNavItem({ icon, label, href, active }: { icon: React.ReactNode, label: string, href: string, active: boolean }) {
   return (
-    <Link href={href} className={`flex flex-col items-center gap-1 ${active ? 'text-green-500' : 'text-white/40'}`}>
+    <Link href={href} className={`flex flex-col items-center gap-1 ${active ? 'text-green-500' : 'text-foreground/40'}`}>
       {icon}
       <span className="text-[8px] font-black uppercase tracking-widest">{label}</span>
     </Link>

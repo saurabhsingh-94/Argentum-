@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { hashContent } from '@/lib/utils/hash'
 import { calculateStreak } from '@/lib/utils/streak'
 import MarkdownEditor from '@/components/MarkdownEditor'
-import { ChevronLeft, Info, Globe, Lock, Zap } from 'lucide-react'
+import { ChevronLeft, Info, Globe, Lock, Zap, Plus, Loader2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 
 const categories = ['Speak', 'Web3', 'AI', 'Mobile', 'DevTools', 'Game', 'Other']
@@ -40,7 +41,7 @@ export default function NewPost() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || loading || !content) return
+    if (!user || loading || !content || !title) return
 
     setLoading(true)
     try {
@@ -65,7 +66,12 @@ export default function NewPost() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '23514' && error.message.includes('posts_category_check')) {
+            throw new Error("Category 'Speak' is not yet supported in the database. Please contact admin or use another category.")
+        }
+        throw error
+      }
 
       // 3. Record Streak History
       const postDate = new Date().toISOString().split('T')[0]
@@ -110,159 +116,224 @@ export default function NewPost() {
       
       router.push(`/post/${data.id}`)
     } catch (error: any) {
-      alert(error.message)
+      console.error('Post creation failed:', error)
+      alert(error.message || "Failed to create post. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   const isSpeak = postType === 'speak'
-  const accentColor = isSpeak ? 'amber-500' : 'accent'
-  const accentBorder = isSpeak ? 'border-amber-500/50' : 'border-accent/40'
-  const accentBg = isSpeak ? 'bg-amber-500/10' : 'bg-accent/10'
-
+  
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <Link href="/" className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm group">
-          <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          <span>Back to feed</span>
-        </Link>
+    <div className="min-h-screen bg-background relative overflow-hidden selection:bg-silver/30">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 noise-bg opacity-[0.03] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-silver/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className={`absolute bottom-0 left-0 w-[500px] h-[500px] blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none transition-colors duration-1000 ${isSpeak ? 'bg-amber-500/10' : 'bg-blue-500/5'}`} />
 
-        {/* Post Type Selector */}
-        <div className="bg-[#111] border border-white/5 p-1 rounded-2xl flex gap-1">
-          <button
-            type="button"
-            onClick={() => setPostType('log')}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              postType === 'log' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            Build Log
-          </button>
-          <button
-            type="button"
-            onClick={() => setPostType('speak')}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-              postType === 'speak' ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'text-gray-500 hover:text-amber-500/50'
-            }`}
-          >
-            <Zap size={10} />
-            Speak
-          </button>
-        </div>
-      </div>
+      <div className="container mx-auto px-4 py-12 max-w-4xl relative z-10">
+        <header className="flex items-center justify-between mb-16">
+          <Link href="/" className="flex items-center gap-3 text-foreground/40 hover:text-foreground transition-all group px-4 py-2 rounded-xl bg-foreground/[0.02] border border-border/50 hover:border-border">
+            <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Abort / Back</span>
+          </Link>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        <div className={`p-10 rounded-[2.5rem] border transition-all duration-700 ${isSpeak ? 'bg-amber-500/[0.02] border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.05)]' : 'bg-transparent border-white/5'}`}>
-          <div className="flex flex-col gap-2 mb-10">
-            <label className={`text-[10px] font-black uppercase tracking-[0.3em] ml-1 mb-2 block transition-colors ${isSpeak ? 'text-amber-500' : 'text-gray-500'}`}>
-              {isSpeak ? 'Announcement Title' : 'Project / Build Name'} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={isSpeak ? "e.g., Major Protocol Update" : "e.g., Argentum Dashboard"}
-              className={`bg-transparent text-5xl font-black tracking-tighter focus:outline-none placeholder:text-gray-900 transition-all border-b pb-4 ${isSpeak ? 'text-amber-500 border-amber-500/20 placeholder:text-amber-900/30' : 'text-white border-white/5'}`}
-            />
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center silver-glow-sm">
+                <Plus size={20} className="text-silver" />
+            </div>
+            <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-foreground/40">New Transmission</h1>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {!isSpeak && (
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="bg-[#0d0d0d] border border-white/5 rounded-2xl px-5 py-3 text-xs font-bold focus:outline-none focus:border-accent transition-colors appearance-none"
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+          <div className="w-[120px]" /> {/* Spacer */}
+        </header>
 
-            <div className={`flex flex-col gap-2 ${isSpeak ? 'md:col-span-2' : ''}`}>
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Visibility</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStatus('published')}
-                  className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                    status === 'published' 
-                      ? `${accentBg} ${accentBorder} text-${isSpeak ? 'amber-500' : 'white'}` 
-                      : 'bg-[#0d0d0d] border-white/5 text-gray-500'
-                  }`}
-                >
-                  <Globe size={14} />
-                  <span>Public</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatus('private')}
-                  className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                    status === 'private' 
-                      ? 'bg-white/5 border-white/10 text-white' 
-                      : 'bg-[#0d0d0d] border-white/5 text-gray-500'
-                  }`}
-                >
-                  <Lock size={14} />
-                  <span>Private</span>
-                </button>
-              </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-12">
+          {/* Post Type Selector */}
+          <div className="flex justify-center">
+            <div className="bg-card/50 backdrop-blur-xl border border-border p-1.5 rounded-2xl flex gap-1.5 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => setPostType('log')}
+                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  postType === 'log' ? 'bg-foreground text-background shadow-xl' : 'text-foreground/40 hover:text-foreground hover:bg-foreground/5'
+                }`}
+              >
+                Build Log
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostType('speak')}
+                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  postType === 'speak' ? 'bg-amber-500 text-black shadow-[0_0_25px_rgba(245,158,11,0.4)]' : 'text-foreground/40 hover:text-amber-500/60 hover:bg-amber-500/5'
+                }`}
+              >
+                <Zap size={12} className={postType === 'speak' ? 'animate-pulse' : ''} />
+                Speak
+              </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 mb-8">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
-              {isSpeak ? 'Broadcast Content' : 'Build Log (Markdown)'}
-            </label>
-            <div className={`rounded-3xl border transition-all duration-500 ${isSpeak ? 'border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : 'border-white/5'}`}>
-              <MarkdownEditor value={content} onChange={(val) => setContent(val || '')} />
+          <motion.div 
+            layout
+            className={`relative p-8 md:p-12 rounded-[3rem] border backdrop-blur-3xl shadow-3xl transition-all duration-700 ${
+              isSpeak 
+                ? 'bg-amber-500/[0.03] border-amber-500/30 shadow-amber-500/5' 
+                : 'bg-card/30 border-border/50 shadow-black/20'
+            }`}
+          >
+            {/* Top Section: Title */}
+            <div className="flex flex-col gap-3 mb-12">
+              <label className={`text-[10px] font-black uppercase tracking-[0.3em] ml-2 transition-colors ${isSpeak ? 'text-amber-500' : 'text-foreground/40'}`}>
+                {isSpeak ? 'Broadcast Headline' : 'Project Identity'}
+              </label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={isSpeak ? "Major synchronization event..." : "Untitled build log"}
+                className={`bg-transparent text-4xl md:text-6xl font-black tracking-tighter focus:outline-none placeholder:opacity-10 transition-all border-b pb-6 px-2 ${
+                    isSpeak ? 'text-amber-500 border-amber-500/20' : 'text-foreground border-border/50'
+                }`}
+              />
             </div>
-          </div>
 
-          <div className="flex flex-col gap-2 mb-8">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Tags (comma separated)</label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="web3, rust, frontend"
-              className="bg-[#0d0d0d] border border-white/5 rounded-2xl px-5 py-4 text-xs font-bold focus:outline-none focus:border-accent transition-colors placeholder:text-gray-800"
-            />
-          </div>
+            {/* Middle Section: Meta */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+              {!isSpeak && (
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-black text-foreground/40 uppercase tracking-widest ml-1">Sector / Category</label>
+                  <div className="relative group">
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-background border border-border rounded-2xl px-6 py-4 text-xs font-bold focus:outline-none focus:border-foreground/40 transition-all appearance-none cursor-pointer group-hover:border-border/80"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 group-hover:opacity-100 transition-opacity">
+                        <ChevronLeft size={14} className="-rotate-90" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          <div className={`${accentBg} border ${accentBorder} rounded-[1.5rem] p-6 flex gap-6 items-start mb-10`}>
-              <Info className={isSpeak ? 'text-amber-500' : 'text-accent'} size={20} />
-              <div className="flex flex-col gap-2">
-                  <span className={`text-sm font-black italic uppercase tracking-widest ${isSpeak ? 'text-amber-500' : 'text-accent'}`}>
-                    {isSpeak ? 'Premium Broadcast' : 'Proof of Work'}
+              <div className={`flex flex-col gap-3 ${isSpeak ? 'md:col-span-2' : ''}`}>
+                <label className="text-[10px] font-black text-foreground/40 uppercase tracking-widest ml-1">Status / Visibility</label>
+                <div className="flex gap-3 bg-background/50 p-1.5 rounded-2xl border border-border/50">
+                  <button
+                    type="button"
+                    onClick={() => setStatus('published')}
+                    className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      status === 'published' 
+                        ? 'bg-foreground/5 text-foreground border border-border' 
+                        : 'text-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <Globe size={14} />
+                    <span>Public</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatus('private')}
+                    className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      status === 'private' 
+                        ? 'bg-foreground/5 text-foreground border border-border' 
+                        : 'text-foreground/40 hover:text-foreground'
+                    }`}
+                  >
+                    <Lock size={14} />
+                    <span>Private</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex flex-col gap-3 mb-10">
+              <label className="text-[10px] font-black text-foreground/40 uppercase tracking-widest ml-1">
+                {isSpeak ? 'Broadcast Payload' : 'The Build Log'}
+              </label>
+              <div className={`rounded-3xl border transition-all duration-700 overflow-hidden ${
+                isSpeak ? 'bg-amber-500/[0.01] border-amber-500/20 focus-within:border-amber-500/40' : 'bg-background/20 border-border focus-within:border-foreground/20'
+              }`}>
+                <MarkdownEditor value={content} onChange={(val) => setContent(val || '')} />
+              </div>
+            </div>
+
+            {/* Bottom Meta */}
+            <div className="flex flex-col gap-3 mb-12">
+              <label className="text-[10px] font-black text-foreground/40 uppercase tracking-widest ml-1">Tags</label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="web3, design, rust..."
+                className="bg-background/50 border border-border rounded-2xl px-6 py-4 text-xs font-bold focus:outline-none focus:border-foreground/20 transition-all placeholder:opacity-20 translate-x-0"
+              />
+            </div>
+
+            {/* Premium Info Panel */}
+            <motion.div 
+               layout
+               className={`border rounded-[2rem] p-6 flex gap-6 items-start mb-12 transition-all duration-700 ${
+                 isSpeak ? 'bg-amber-500/10 border-amber-500/20' : 'bg-foreground/[0.02] border-border'
+               }`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSpeak ? 'bg-amber-500/20 text-amber-500' : 'bg-foreground/5 text-foreground/40'}`}>
+                <Info size={18} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isSpeak ? 'text-amber-500' : 'text-foreground/60'}`}>
+                    {isSpeak ? 'Hyper-priority Transmission' : 'Proof of Knowledge'}
                   </span>
-                  <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
+                  <p className="text-[11px] text-foreground/40 font-medium leading-relaxed max-w-xl">
                       {isSpeak 
-                        ? "Speak broadcasts are shown with a golden border and premium glow on the global feed. They are designed for major project announcements."
-                        : "By publishing, a SHA-256 hash of your content will be generated and stored on-chain (coming soon) to prove the integrity and existence of your build."}
+                        ? "Broadcasts bypass standard filters for subscribers and appear with high-intensity visual signatures on the global network."
+                        : "Post-signature verified. Your content will be hashed and indexed for perpetual discovery within the Argentum Protocol."}
                   </p>
               </div>
-          </div>
+            </motion.div>
 
-          <button
-            type="submit"
-            disabled={loading || !content || !title}
-            className={`w-full font-black py-5 rounded-2xl transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 disabled:grayscale uppercase tracking-[0.3em] text-[11px] ${
-              isSpeak 
-                ? 'bg-amber-500 text-black shadow-amber-500/20 hover:bg-amber-400' 
-                : 'bg-accent text-black shadow-accent/20 hover:bg-accent/90'
-            }`}
-          >
-            {loading ? 'Processing...' : isSpeak ? 'Broadcast Speak' : 'Publish Build Log'}
-          </button>
-        </div>
-      </form>
+            {/* Action */}
+            <button
+              type="submit"
+              disabled={loading || !content || !title}
+              className={`w-full font-black py-6 rounded-2xl transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 disabled:grayscale uppercase tracking-[0.4em] text-xs relative overflow-hidden group ${
+                isSpeak 
+                  ? 'bg-amber-500 text-black hover:bg-amber-400' 
+                  : 'bg-foreground text-background hover:bg-foreground/90'
+              }`}
+            >
+              <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                {loading ? (
+                    <>
+                        <Loader2 className="animate-spin" size={16} />
+                        <span>Synchronizing...</span>
+                    </>
+                ) : (
+                    <>
+                        {isSpeak ? <Zap size={14} /> : <Plus size={14} />}
+                        <span>{isSpeak ? 'Initialize Broadcast' : 'Deploy Build Log'}</span>
+                    </>
+                )}
+              </span>
+            </button>
+          </motion.div>
+        </form>
+
+        <footer className="mt-20 text-center flex flex-col items-center gap-4">
+            <div className="w-1 h-8 bg-gradient-to-b from-border to-transparent" />
+            <p className="text-[9px] text-foreground/20 font-black uppercase tracking-[0.3em]">
+                Argentum Core Submission Layer v2.0
+            </p>
+        </footer>
+      </div>
     </div>
   )
 }

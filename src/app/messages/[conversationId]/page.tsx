@@ -359,7 +359,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           attachment_size: attachmentData?.size
         })
 
-       if (error) throw error
+      if (error) throw error
       setNewMessage('')
       setReplyTo(null)
 
@@ -369,6 +369,9 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         setShowBackupModal(true)
         localStorage.setItem('ag_backup_prompted', 'true')
       }
+    } catch (err: any) {
+      console.error('Message failed to send:', err)
+      alert(`Message failed: ${err.message || 'Unknown error'}`)
     } finally {
       setSending(false)
     }

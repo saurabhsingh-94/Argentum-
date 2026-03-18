@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import CommandPalette from '@/components/CommandPalette'
 import PresenceHandler from '@/components/PresenceHandler'
+import SessionManager from '@/components/SessionManager'
 import { useEffect, useState } from 'react'
 
 import { SearchProvider } from '@/context/SearchContext'
@@ -39,6 +40,7 @@ export default function ClientLayout({
         {!isMessages && !isProfile && !isAuth && <Footer />}
         <CommandPalette />
         <PresenceHandler />
+        <SessionManager />
       </SearchProvider>
     </ThemeProvider>
   )
