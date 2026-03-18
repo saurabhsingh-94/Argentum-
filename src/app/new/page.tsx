@@ -157,7 +157,7 @@ export default function NewPost() {
                 type="button"
                 onClick={() => setPostType('log')}
                 className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  postType === 'log' ? 'bg-foreground text-background shadow-xl' : 'text-foreground/40 hover:text-foreground hover:bg-foreground/5'
+                  postType === 'log' ? 'bg-white text-black shadow-xl ring-1 ring-white/10' : 'text-foreground/60 hover:text-foreground hover:bg-foreground/5'
                 }`}
               >
                 Build Log
@@ -166,7 +166,7 @@ export default function NewPost() {
                 type="button"
                 onClick={() => setPostType('speak')}
                 className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  postType === 'speak' ? 'bg-amber-500 text-black shadow-[0_0_25px_rgba(245,158,11,0.4)]' : 'text-foreground/40 hover:text-amber-500/60 hover:bg-amber-500/5'
+                  postType === 'speak' ? 'bg-amber-500 text-black shadow-[0_0_25px_rgba(245,158,11,0.4)]' : 'text-foreground/60 hover:text-amber-500/60 hover:bg-amber-500/5'
                 }`}
               >
                 <Zap size={12} className={postType === 'speak' ? 'animate-pulse' : ''} />
@@ -303,10 +303,10 @@ export default function NewPost() {
             <button
               type="submit"
               disabled={loading || !content || !title}
-              className={`w-full font-black py-6 rounded-2xl transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 disabled:grayscale uppercase tracking-[0.4em] text-xs relative overflow-hidden group ${
+              className={`w-full font-black py-6 rounded-2xl transition-all shadow-3xl active:scale-[0.98] disabled:opacity-30 disabled:grayscale uppercase tracking-[0.4em] text-xs relative overflow-hidden group border border-white/10 ${
                 isSpeak 
                   ? 'bg-amber-500 text-black hover:bg-amber-400' 
-                  : 'bg-foreground text-background hover:bg-foreground/90'
+                  : 'bg-white text-black hover:bg-gray-100'
               }`}
             >
               <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
