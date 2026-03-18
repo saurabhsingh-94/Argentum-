@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Github, Globe, Award, Flame, Zap, Twitter, Instagram, Edit3, Share2, Calendar, Rocket, Lock, Globe2, AtSign, Search, Pin, MessageCircle, Loader2, ArrowUpRight } from 'lucide-react'
+import { Github, Globe, Award, Flame, Zap, Twitter, Instagram, Edit3, Share2, Calendar, Rocket, Lock, Globe2, AtSign, Search, Pin, MessageCircle, Loader2, ArrowUpRight, ArrowLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PostCard from '@/components/PostCard'
@@ -168,12 +168,34 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-silver/30">
+    <div className="min-h-screen bg-background text-foreground selection:bg-silver/30 relative">
+      {/* Floating Navigation */}
+      <div className="fixed top-6 left-6 z-[100] flex items-center gap-2">
+        <button 
+          onClick={() => router.back()}
+          className="p-3 rounded-2xl bg-background/50 backdrop-blur-xl border border-border text-foreground/60 hover:text-foreground hover:bg-background/80 transition-all shadow-xl group"
+          title="Go Back"
+        >
+          <ArrowLeft size={20} className="group-active:-translate-x-1 transition-transform" />
+        </button>
+      </div>
+
+      <div className="fixed top-6 right-6 z-[100] flex items-center gap-3">
+        {isOwner && (
+          <Link 
+            href="/settings"
+            className="p-3 rounded-2xl bg-background/50 backdrop-blur-xl border border-border text-foreground/60 hover:text-foreground hover:bg-background/80 transition-all shadow-xl group"
+            title="Settings"
+          >
+            <Settings size={20} className="group-hover:rotate-45 transition-transform" />
+          </Link>
+        )}
+      </div>
       {/* Hero Header Area */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-[#050505]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-background" />
         <div className="mesh-gradient-bg opacity-40" />
-        <div className="absolute inset-0 bg-[#050505]/40 backdrop-blur-3xl" />
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-3xl" />
         
         <div 
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none animate-pulse" 
@@ -191,12 +213,12 @@ export default function ProfileContent({ initialProfile, posts, isOwner }: Profi
             className="glass-card max-w-lg mx-auto p-16 flex flex-col items-center text-center gap-8 mt-20 animate-fade-in"
             style={getAnimationStyle('slideBottom', 100)}
           >
-            <div className="w-28 h-28 rounded-[2.5rem] border-2 border-white/5 bg-[#0d0d0d] flex items-center justify-center relative shadow-glow">
+            <div className="w-28 h-28 rounded-[2.5rem] border-2 border-border bg-card flex items-center justify-center relative shadow-glow">
               <div className="absolute inset-0 bg-silver/10 blur-3xl rounded-full" />
-              <span className="text-4xl font-black text-white drop-shadow-glow relative z-10">
+              <span className="text-4xl font-black text-foreground drop-shadow-glow relative z-10">
                 {profile.display_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || profile.username?.[0]?.toUpperCase()}
               </span>
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-[#050505] border border-white/10 flex items-center justify-center shadow-xl">
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-background border border-border flex items-center justify-center shadow-xl">
                 <Lock size={18} className="text-silver" />
               </div>
             </div>
@@ -543,20 +565,20 @@ function StatsCard({ label, value, icon, isStreak }: { label: string, value: any
 
   return (
     <div className={`
-      glass-card p-6 flex flex-col items-center justify-center text-center gap-3 group transition-all hover:bg-white/[0.03] hover:border-white/20
+      glass-card p-6 flex flex-col items-center justify-center text-center gap-3 group transition-all hover:bg-foreground/5 hover:border-border
       ${isStreak ? 'hover:ring-1 hover:ring-orange-500/20 shadow-glow-orange/0 hover:shadow-glow-orange/10' : ''}
     `}>
       <div className={`
-        w-12 h-12 rounded-2xl bg-[#111] border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform
+        w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center group-hover:scale-110 transition-transform
         ${isStreak ? 'group-hover:shadow-glow-orange/50' : ''}
       `}>
         {icon}
       </div>
       <div className="flex flex-col">
-        <span className="text-3xl font-black text-white group-hover:silver-glow-text transition-all tracking-tight">
+        <span className="text-3xl font-black text-foreground group-hover:silver-glow-text transition-all tracking-tight">
           {typeof value === 'number' ? displayValue : value}
         </span>
-        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mt-1">{label}</span>
+        <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em] mt-1">{label}</span>
       </div>
     </div>
   )

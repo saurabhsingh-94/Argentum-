@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { MessageCircle, Search, Loader2, Plus, Lock, AtSign } from 'lucide-react'
+import { MessageCircle, Search, Loader2, Plus, Lock, AtSign, ArrowLeft, Home } from 'lucide-react'
 import Link from 'next/link'
 import { decryptMessage, getStoredSecretKey, initializeEncryption, resetKeys } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -148,9 +148,14 @@ export default function MessagesPage() {
         className="w-full md:w-[320px] border-r border-border bg-card flex flex-col z-20"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <h1 className="text-xl font-black text-white tracking-tighter">Messages</h1>
-          <button className="p-2 hover:bg-white/5 rounded-xl transition-all text-gray-400 hover:text-white">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/feed" className="p-2 -ml-2 hover:bg-white/5 rounded-xl text-foreground/40 hover:text-foreground transition-all" title="Back to Feed">
+              <ArrowLeft size={18} />
+            </Link>
+            <h1 className="text-xl font-black tracking-tighter">Messages</h1>
+          </div>
+          <button className="p-2 hover:bg-white/5 rounded-xl transition-all text-foreground/40 hover:text-foreground">
             <Plus size={20} />
           </button>
         </div>
@@ -164,7 +169,7 @@ export default function MessagesPage() {
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 rounded-xl py-2.5 pl-9 pr-4 text-xs focus:outline-none focus:border-white/10 focus:bg-white/[0.07] transition-all placeholder:text-gray-600"
+              className="w-full bg-card border border-border rounded-xl py-2.5 pl-9 pr-4 text-xs focus:outline-none focus:border-border focus:bg-background/50 transition-all placeholder:text-foreground/30"
             />
           </div>
         </div>
@@ -216,10 +221,10 @@ export default function MessagesPage() {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 px-6 text-center gap-3">
-               <div className="w-10 h-10 rounded-xl border border-white/5 bg-white/5 flex items-center justify-center text-gray-700">
+               <div className="w-10 h-10 rounded-xl border border-border bg-card flex items-center justify-center text-foreground/40">
                 <span className="text-xs font-bold uppercase tracking-widest selection:bg-transparent">Ag</span>
               </div>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">No conversations yet</p>
+              <p className="text-xs text-foreground/40 font-bold uppercase tracking-widest">No conversations yet</p>
             </div>
           ) : (
             <div className="flex flex-col">
@@ -227,7 +232,7 @@ export default function MessagesPage() {
                 <Link 
                   key={conv.id}
                   href={`/messages/${conv.id}`}
-                  className="px-4 py-4 flex items-center gap-4 hover:bg-white/[0.03] transition-all group border-l-2 border-transparent"
+                  className="px-4 py-4 flex items-center gap-4 hover:bg-foreground/5 transition-all group border-l-2 border-transparent"
                 >
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full border border-border overflow-hidden bg-card flex items-center justify-center text-silver group-hover:border-foreground/20 transition-all">
@@ -251,7 +256,7 @@ export default function MessagesPage() {
 
                   <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-white truncate group-hover:silver-glow-text transition-all">
+                      <span className="text-sm font-bold text-foreground truncate group-hover:silver-glow-text transition-all">
                         {conv.otherParticipant.display_name || `@${conv.otherParticipant.username}`}
                       </span>
                       {conv.lastMessageTime && (

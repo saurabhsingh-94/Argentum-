@@ -15,7 +15,7 @@ export default function CategoryFilter({
         <div key={cat} className="flex-shrink-0 group">
           <div className="relative transform-style-3d">
             {/* The "Well" or Base (Always visible, providing depth) */}
-            <div className="absolute inset-0 translate-y-2 rounded-xl bg-black border border-white/10 opacity-40 shadow-inner" />
+            <div className="absolute inset-0 translate-y-2 rounded-xl bg-background border border-border opacity-40 shadow-inner" />
             
             <button
               onClick={() => onSelect(cat)}
@@ -23,7 +23,7 @@ export default function CategoryFilter({
                 relative px-7 py-3 rounded-xl text-[11px] font-black tracking-[0.15em] uppercase transition-all duration-500 transform-style-3d border box-border
                 ${selected === cat 
                   ? 'bg-gradient-to-b from-white via-silver to-gray-400 text-black border-white/50 -translate-y-2 shadow-silver-lux' 
-                  : 'bg-[#0d0d0d] text-gray-500 border-white/5 hover:border-white/20 hover:text-white translate-y-0 hover:-translate-y-1 shadow-flat'
+                  : 'bg-card text-foreground/40 border-border hover:border-border/50 hover:text-foreground translate-y-0 hover:-translate-y-1 shadow-flat'
                 }
                 active:translate-y-[-2px] active:scale-[0.98]
               `}

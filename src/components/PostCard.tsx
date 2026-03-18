@@ -131,7 +131,7 @@ export default function PostCard({
           <div className="relative">
             <button 
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/5 opacity-0 group-hover:opacity-100"
+              className="p-2 text-foreground/40 hover:text-foreground transition-colors rounded-lg hover:bg-foreground/5 opacity-0 group-hover:opacity-100"
             >
               <MoreHorizontal size={18} />
             </button>
@@ -143,13 +143,13 @@ export default function PostCard({
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl z-[100] p-1"
                 >
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
                     <Bookmark size={14} /> Save to collection
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
                     <Share2 size={14} /> Share post
                   </button>
-                  <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                  <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
                     <Link2 size={14} /> Copy link
                   </button>
                   {!isOwner && (
@@ -168,7 +168,7 @@ export default function PostCard({
           {skills.slice(0, 3).map((skill: string) => (
             <span 
               key={skill} 
-              className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-bold text-gray-400 hover:border-white/10 transition-colors"
+              className="px-2 py-0.5 rounded-full bg-foreground/5 border border-border text-[9px] font-bold text-foreground/40 hover:border-border/50 transition-colors"
             >
               {skill}
             </span>
@@ -177,10 +177,10 @@ export default function PostCard({
 
         {/* Content Area */}
         <Link href={`/post/${post.id}`} className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-white leading-snug group-hover:text-green-400 transition-colors">
+          <h3 className="text-base font-semibold text-foreground leading-snug group-hover:text-green-500 transition-colors">
             {post.title}
           </h3>
-          <p className="text-sm text-white/50 line-clamp-3 leading-relaxed">
+          <p className="text-sm text-foreground/50 line-clamp-3 leading-relaxed">
             {post.content.replace(/[#*`]/g, '')}
           </p>
 

@@ -92,7 +92,7 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
           <button
             onClick={loadMore}
             disabled={loading}
-            className="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-silver hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 disabled:opacity-50"
+            className="px-8 py-3 rounded-xl bg-card border border-border text-xs font-bold uppercase tracking-widest text-foreground/60 hover:bg-foreground/5 hover:border-border/50 transition-all flex items-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -108,13 +108,13 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
 
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-10">
-            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.3em]">End of Transmission</span>
+            <span className="text-[10px] font-bold text-foreground/20 uppercase tracking-[0.3em]">End of Transmission</span>
         </div>
       )}
 
       {posts.length === 0 && (
-        <div className="py-20 text-center flex flex-col items-center gap-4 animate-fade-in text-gray-600 font-mono text-sm uppercase tracking-widest">
-          <div className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center opacity-20">
+        <div className="py-20 text-center flex flex-col items-center gap-4 animate-fade-in text-foreground/40 font-mono text-sm uppercase tracking-widest">
+          <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center opacity-20">
               //
           </div>
           No data found in sector: {category}
