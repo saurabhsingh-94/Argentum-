@@ -137,6 +137,14 @@
   animation: mesh 20s ease-in-out infinite alternate;
 }
 
+* {
+  transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              backdrop-filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -194,13 +202,13 @@ body::before {
 }
 
 .glass .glass-card {
-  background: rgba(255, 255, 255, 0.12); /* Brighter frosted look */
-  backdrop-filter: blur(60px) saturate(150%);
-  -webkit-backdrop-filter: blur(60px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(100px) saturate(180%);
+  -webkit-backdrop-filter: blur(100px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 20px 50px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .glass .glass-card::before {
@@ -243,6 +251,24 @@ body::before {
   color: #000 !important;
   font-weight: 800;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.glass .silver-metallic {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  color: #fff !important;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.glass .silver-metallic:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-2px);
 }
 
 .silver-glow {
@@ -296,8 +322,22 @@ body::before {
 
 .glass-header {
   background: rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: blur(60px) saturate(150%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(80px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-panel {
+  background: var(--card-overlay);
+  backdrop-filter: blur(60px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.glass .glass-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(100px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .glass-search {

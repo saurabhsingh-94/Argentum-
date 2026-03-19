@@ -87,7 +87,7 @@ export default async function FeedPage() {
           </main>
 
           {/* Sidebar */}
-          <aside className="w-full lg:w-80 flex flex-col gap-8">
+          <aside className="w-full lg:w-80 flex flex-col gap-8 lg:sticky lg:top-24 lg:self-start">
             {/* Stats Overview */}
             <div className="bg-card glass-card border border-border rounded-2xl p-6 shadow-2xl">
                <div className="flex items-center justify-between mb-4">
