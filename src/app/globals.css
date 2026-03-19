@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #050505;
-  --color-card: #0d0d0d;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
   --color-silver: #C0C0C0;
   --color-silver-bright: #f3f4f6;
-  --color-accent: #C0C0C0;
-  --color-accent-blue: #2563eb;
+  --color-accent: var(--accent);
+  --color-accent-blue: var(--accent-blue);
+  --color-border: var(--border);
   
   --shadow-glow: 0 0 20px 2px rgba(192, 192, 192, 0.2);
   --shadow-blue-glow: 0 0 25px 2px rgba(37, 99, 235, 0.15);
@@ -56,7 +58,19 @@
   --radius: 1.5rem; 
   --silver-gradient: linear-gradient(135deg, #ffffff 0%, #f5f5f7 50%, #d2d2d7 100%);
   --shadow-premium: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+.light {
+  --background: #fdfdfd; 
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-overlay: rgba(255, 255, 255, 0.7);
+  --border: rgba(0, 0, 0, 0.1);
+  --silver: #86868b;
+  --silver-bright: #1d1d1f;
+  --accent: #000000;
+  --accent-blue: #007aff; 
 }
 
 .dark {
@@ -77,18 +91,18 @@
 
 .glass {
   --background: transparent;
-  --foreground: #000000;
-  --card: rgba(255, 255, 255, 0.15);
-  --card-overlay: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.3);
-  --silver: #4b4b4b;
-  --silver-bright: #000000;
-  --accent: #007aff;
-  --accent-blue: #007aff;
+  --foreground: #ffffff;
+  --card: rgba(255, 255, 255, 0.1);
+  --card-overlay: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.1);
+  --silver: #C0C0C0;
+  --silver-bright: #ffffff;
+  --accent: #ffffff;
+  --accent-blue: #3b82f6;
   --radius: 1.5rem;
-  --silver-gradient: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.05));
-  --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  --silver-gradient: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.02));
+  --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.2);
 }
 
 .glass body::before {
@@ -102,13 +116,13 @@
 .glass .mesh-gradient-bg {
   display: block;
   opacity: 1;
-  filter: blur(60px);
+  filter: blur(80px);
   background-image: 
-    radial-gradient(at 0% 0%, #e5e7eb 0, transparent 50%),
-    radial-gradient(at 50% 0%, #f3f4f6 0, transparent 50%),
-    radial-gradient(at 100% 0%, #d1d5db 0, transparent 50%),
-    radial-gradient(at 100% 100%, #9ca3af 0, transparent 50%),
-    radial-gradient(at 0% 100%, #f9fafb 0, transparent 50%);
+    radial-gradient(at 0% 0%, #1e293b 0, transparent 50%),
+    radial-gradient(at 50% 0%, #0f172a 0, transparent 50%),
+    radial-gradient(at 100% 0%, #1e1b4b 0, transparent 50%),
+    radial-gradient(at 100% 100%, #111827 0, transparent 50%),
+    radial-gradient(at 0% 100%, #020617 0, transparent 50%);
   animation: mesh 15s ease-in-out infinite alternate;
 }
 

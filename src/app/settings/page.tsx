@@ -38,7 +38,7 @@ type SettingsSection = 'account' | 'privacy' | 'notifications' | 'messaging' | '
 export default function SettingsPage() {
   const supabase = createClient()
   const router = useRouter()
-  const { theme, toggleTheme } = useTheme()
+  const { theme, setTheme, toggleTheme } = useTheme()
   const [activeSection, setActiveSection] = useState<SettingsSection>('account')
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                   <div className="space-y-8">
                     <div>
                       <h2 className="text-xl font-black mb-2">Account</h2>
-                      <p className="text-sm text-gray-400">Manage your profile and linked accounts.</p>
+                      <p className="text-sm text-foreground/40">Manage your profile and linked accounts.</p>
                     </div>
 
                     <div className="space-y-6">
@@ -295,7 +295,7 @@ export default function SettingsPage() {
                   <div className="space-y-8">
                     <div>
                       <h2 className="text-xl font-black mb-2">Privacy</h2>
-                      <p className="text-sm text-gray-400">Control who can see your activity and profile.</p>
+                      <p className="text-sm text-foreground/40">Control who can see your activity and profile.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -337,7 +337,7 @@ export default function SettingsPage() {
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2">Notifications</h2>
-                      <p className="text-sm text-gray-400">Stay updated on your activity.</p>
+                      <p className="text-sm text-foreground/40">Stay updated on your activity.</p>
                     </div>
 
                     <div className="space-y-3">
@@ -362,7 +362,7 @@ export default function SettingsPage() {
                    <div className="space-y-8">
                       <div>
                         <h2 className="text-xl font-black mb-2">Messaging</h2>
-                        <p className="text-sm text-gray-400">Advanced security for your conversations.</p>
+                        <p className="text-sm text-foreground/40">Advanced security for your conversations.</p>
                       </div>
 
                       <div className="p-6 bg-card/5 border border-border rounded-2xl space-y-6">
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2">Security</h2>
-                      <p className="text-sm text-gray-400">Protect your data and encryption keys.</p>
+                      <p className="text-sm text-foreground/40">Protect your data and encryption keys.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -443,21 +443,30 @@ export default function SettingsPage() {
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2">Appearance</h2>
-                      <p className="text-sm text-gray-400">Customize your visual experience.</p>
+                      <p className="text-sm text-foreground/40">Customize your visual experience.</p>
                     </div>
 
                     <div className="space-y-4">
-                       <div className="p-6 bg-card/5 border border-border rounded-2xl flex items-center justify-between">
+                       <div className="p-6 bg-card/5 border border-border rounded-2xl flex flex-col gap-6">
                           <div className="flex items-center gap-3">
                              <Moon size={18} className="text-silver" />
                              <span className="text-sm font-bold">Theme</span>
                           </div>
-                          <button 
-                            onClick={toggleTheme}
-                            className="px-4 py-2 bg-card border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all min-w-[80px]"
-                          >
-                            {theme.charAt(0).toUpperCase() + theme.slice(1)}
-                          </button>
+                          <div className="flex gap-2 p-1 bg-background/50 rounded-2xl border border-border/50">
+                            {(['light', 'dark', 'glass'] as const).map((t) => (
+                              <button
+                                key={t}
+                                onClick={() => setTheme(t)}
+                                className={`flex-1 px-4 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                  theme === t 
+                                    ? 'bg-foreground text-background shadow-glow border-foreground' 
+                                    : 'bg-card/30 border-transparent text-foreground/40 hover:text-foreground hover:bg-card/50'
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
                        </div>
 
                         <div className="p-6 bg-card/5 border border-border rounded-2xl flex items-center justify-between">
