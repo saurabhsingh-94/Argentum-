@@ -51,10 +51,10 @@ export default async function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-             <Link href="/new" className="px-12 py-5 silver-metallic rounded-2xl font-black uppercase tracking-widest text-[11px] hover:brightness-110 transition-all shadow-premium active:scale-95">
+             <Link href="/new" className="px-12 py-5 silver-metallic rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-premium active:scale-95">
                 Start Building Now
              </Link>
-             <Link href="/explore" className="px-12 py-5 bg-foreground/5 border border-border rounded-2xl font-black uppercase tracking-widest text-[11px] text-foreground/60 hover:bg-foreground/10 transition-all backdrop-blur-xl">
+             <Link href="/explore" className="px-12 py-5 hero-sub-button rounded-2xl font-black uppercase tracking-widest text-[11px]">
                 Explore Network
              </Link>
           </div>
@@ -97,10 +97,10 @@ export default async function Home() {
                </p>
                
                <div className="flex flex-col sm:flex-row items-center justify-center gap-5 relative z-10">
-                  <Link href="/auth/login" className="px-12 py-5 silver-metallic rounded-2xl font-black uppercase tracking-widest text-[11px] hover:brightness-110 transition-all shadow-premium">
+                  <Link href="/auth/login" className="px-12 py-5 silver-metallic rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-premium">
                      Get Your Invite
                   </Link>
-                  <Link href="https://github.com" className="flex items-center gap-3 px-12 py-5 bg-foreground/5 border border-border rounded-2xl font-black uppercase tracking-widest text-[11px] text-foreground/40 hover:bg-foreground/10 transition-all">
+                  <Link href="https://github.com" className="flex items-center gap-3 px-12 py-5 hero-sub-button rounded-2xl font-black uppercase tracking-widest text-[11px]">
                      <Github size={18} /> Import from GitHub
                   </Link>
                </div>

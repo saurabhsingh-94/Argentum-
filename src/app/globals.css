@@ -239,29 +239,41 @@ body::before {
   box-shadow: var(--silver-glow);
 }
 
+/* Metallic & Hero Buttons */
 .silver-metallic {
-  background: var(--silver-gradient);
-  color: #000 !important;
+  background: var(--metallic-gradient);
+  color: #111827 !important; /* Premium dark gray for contrast on silver */
   font-weight: 800;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .silver-metallic {
-  box-shadow: 0 0 15px rgba(192, 192, 192, 0.2);
-}
-
-.glass .silver-metallic {
-  background: rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(10px);
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+.dark .silver-metallic, .glass .silver-metallic {
+  color: #000000 !important;
+  box-shadow: 0 0 25px rgba(192, 192, 192, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .silver-metallic:hover {
   filter: brightness(1.1);
-  transform: scale(1.02);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 30px rgba(192, 192, 192, 0.3);
+}
+
+.hero-sub-button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.hero-sub-button:hover {
+  background: var(--bg-surface);
+  border-color: var(--primary-silver);
+  color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 /* 4. Silver Effects */
