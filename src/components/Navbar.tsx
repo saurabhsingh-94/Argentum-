@@ -186,7 +186,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
                   <Link 
                     href="/new" 
-                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full silver-metallic text-background text-[10px] font-black uppercase tracking-widest shadow-glow-silver/20 hover:brightness-110 transition-all active:scale-95 silver-shine"
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full silver-metallic text-[10px] font-black uppercase tracking-widest shadow-premium hover:brightness-110 transition-all active:scale-95 silver-shine glass-perspective"
                   >
                     <Plus size={14} />
                     <span>Build Log</span>
@@ -291,7 +291,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             ) : (
               <Link 
                 href="/auth/login"
-                className="px-6 py-2 rounded-full bg-foreground text-background text-[10px] font-black uppercase tracking-widest hover:brightness-90 transition-all active:scale-95 shadow-lg"
+                className="px-6 py-2 rounded-full glass-button-3d text-foreground text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-premium"
               >
                 Sign In
               </Link>

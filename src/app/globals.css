@@ -234,6 +234,9 @@ body::after {
   background: radial-gradient(circle at center, rgba(37, 99, 235, 0.03) 0%, rgba(192, 192, 192, 0.02) 30%, transparent 70%);
   pointer-events: none;
   z-index: -1;
+  /* Prevent jagged edges on some browsers */
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 @layer base {
@@ -280,11 +283,14 @@ body::after {
 /* Metallic & Hero Buttons */
 .silver-metallic {
   background: var(--metallic-gradient);
-  color: #111827 !important; /* Premium dark gray for contrast on silver */
+  color: #111827 !important;
   font-weight: 800;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
 }
 
 .dark .silver-metallic, .glass .silver-metallic {
@@ -295,8 +301,14 @@ body::after {
 
 .silver-metallic:hover {
   filter: brightness(1.1);
-  transform: translateY(-2px) scale(1.01);
+  transform: translateY(-2px) scale(1.02) translateZ(10px);
   box-shadow: 0 8px 30px rgba(192, 192, 192, 0.3);
+}
+
+.silver-metallic:active {
+  transform: translateY(1px) scale(0.98) translateZ(-5px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  filter: brightness(0.95);
 }
 
 /* 10. 3D Glass System */
@@ -305,26 +317,49 @@ body::after {
 }
 
 .glass-button-3d {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(25px) saturate(200%);
-  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 
     0 10px 20px -5px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2);
   transform-style: preserve-3d;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
 }
 
 .glass-button-3d:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateZ(10px) translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) translateZ(15px);
   box-shadow: 
-    0 15px 35px -5px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-button-3d:active {
+  transform: translateY(1px) translateZ(-5px);
+  box-shadow: 
+    0 5px 10px -2px rgba(0, 0, 0, 0.2),
+    inset 0 2px 10px rgba(0, 0, 0, 0.2);
+  filter: brightness(0.9);
+}
+
+.glass-button-3d::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
+  background-size: 200% 100%;
+  pointer-events: none;
+  transition: background-position 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-button-3d:hover::after {
+  background-position: -200% 0;
 }
 
 .glass-button-3d:active {
@@ -422,12 +457,14 @@ body::after {
 
 .glass-header {
   background: var(--card-overlay) !important;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 50;
   transition: all 0.4s ease;
+  box-shadow: 0 4px 20px -10px rgba(0, 0, 0, 0.1); /* Subtle floor shadow to blend jaggedness */
 }
 
 .glass-search {
@@ -565,4 +602,47 @@ body::after {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* 11. Shared Premium Utilities (from Settings) */
+.silver-glow {
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.shadow-glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.shadow-premium {
+  box-shadow: 
+    0 10px 30px -10px rgba(0, 0, 0, 0.3),
+    0 4px 8px -2px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: 0.75s;
+}
+
+.glass-shine:hover::after {
+  left: 150%;
 }
