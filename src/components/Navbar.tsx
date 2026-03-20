@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import AccountSwitcher from './AccountSwitcher'
+import ThemeToggle from './ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
 import StreakModal from './StreakModal'
 import { useSearch } from '@/context/SearchContext'
@@ -163,6 +164,11 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
           {/* Right Section: Actions */}
           <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
+            {/* Theme Toggle (Premium Integration) */}
+            <div className="hidden sm:block mr-2">
+              <ThemeToggle />
+            </div>
+
             {/* Mobile Search Trigger (Always Visible) */}
             <button 
               onClick={() => setIsSearchOpen(true)}

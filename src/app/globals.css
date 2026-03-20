@@ -7,8 +7,14 @@
   --color-silver: #C0C0C0;
   --color-silver-bright: #f3f4f6;
   --color-accent: var(--accent);
-  --color-accent-blue: var(--accent-blue);
   --color-border: var(--border);
+  --color-border-accent: var(--border-accent);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-bg-surface: var(--bg-surface);
   
   --shadow-glow: 0 0 20px 2px rgba(192, 192, 192, 0.2);
   --shadow-blue-glow: 0 0 25px 2px rgba(37, 99, 235, 0.15);
@@ -49,29 +55,26 @@
   /* 1. Brand Silver Palette (Argentum) */
   --primary-silver: #C0C0C0;
   --soft-silver: #E5E5E5;
-  --white-silver: #F8F9FA;
   --dark-silver: #8A8A8A;
-  --metallic-silver: #AFAFAF;
-  --silver-gradient: linear-gradient(135deg, #C0C0C0, #E8E8E8, #AFAFAF);
+  --metallic-gradient: linear-gradient(135deg, #C0C0C0, #E8E8E8, #AFAFAF);
   --silver-glow: 0 0 20px rgba(192, 192, 192, 0.3);
-
-  /* 2. Default Semantic Tokens (Light) */
-  --background: #FDFDFD;
+  
+  /* 2. Default Semantic Tokens (Light - Clean Silver) */
+  --background: #F8F9FA;
   --foreground: #1A1A1A;
   --card: #FFFFFF;
   --card-overlay: rgba(255, 255, 255, 0.8);
   --border: #E2E8F0;
   --accent: var(--primary-silver);
-  --accent-blue: #2563EB;
   --text-primary: #1A1A1A;
   --text-secondary: #4A4A4A;
-  --text-muted: #8A8A8A;
-  --radius: 12px;
-  --glass-border: rgba(0, 0, 0, 0.05);
+  --text-muted: #71717A;
+  --border-accent: var(--soft-silver);
+  --bg-surface: #FFFFFF;
 }
 
 .light {
-  --background: #FDFDFD;
+  --background: #F8F9FA;
   --foreground: #1A1A1A;
   --card: #FFFFFF;
   --border: #E8E8E8;
@@ -79,34 +82,42 @@
   --text-secondary: #4F4F4F;
   --text-muted: #8E8E8E;
   --accent: var(--primary-silver);
-  --silver-effect: inset 0 0 0 1px var(--soft-silver);
+  --border-accent: var(--soft-silver);
+  --bg-surface: #FFFFFF;
 }
 
 .dark {
-  --background: #0A0A0A;
+  /* Cyber Silver */
+  --background: #0A0A0B;
   --foreground: #FFFFFF;
-  --card: #141414;
-  --border: #262626;
-  --text-primary: #FFFFFF;
+  --card: #121214;
+  --border: #242427;
+  --text-primary: #F8F9FB;
   --text-secondary: #A1A1AA;
   --text-muted: #71717A;
-  --accent: var(--soft-silver);
-  --silver-effect: 0 0 15px rgba(192, 192, 192, 0.15);
-  --silver-glow-text: 0 0 8px rgba(192, 192, 192, 0.4);
+  --accent: var(--primary-silver);
+  --border-accent: #3F3F46;
+  --bg-surface: #18181B;
+  
+  --silver-glow-accent: 0 0 15px rgba(192, 192, 192, 0.15);
+  --silver-neon: 0 0 10px rgba(192, 192, 192, 0.4);
 }
 
 .glass {
-  --background: #050505; /* Deep base for contrast */
+  /* Liquid Silver */
+  --background: #020203;
   --foreground: #FFFFFF;
-  --card: rgba(255, 255, 255, 0.05);
-  --card-overlay: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.15);
+  --card: rgba(255, 255, 255, 0.03);
+  --card-overlay: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.1);
   --text-primary: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-muted: rgba(255, 255, 255, 0.45);
-  --accent: var(--white-silver);
-  --silver-effect: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --accent: #E8E8E8;
+  --border-accent: rgba(192, 192, 192, 0.3);
+  --bg-surface: rgba(255, 255, 255, 0.02);
+  
+  --glass-blur: blur(20px);
 }
 
 /* 6. Premium Transitions */
@@ -130,7 +141,17 @@ body {
   transition: 
     background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
     color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 7. Shared Silver Utility Classes */
+.silver-glow-text {
+  text-shadow: var(--silver-neon, 0 0 8px rgba(192, 192, 192, 0.4));
+}
+
+.silver-glow-border {
+  box-shadow: var(--silver-glow-accent, 0 0 15px rgba(192, 192, 192, 0.15));
 }
 
 .glass-card::after {

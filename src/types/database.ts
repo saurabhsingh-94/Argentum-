@@ -344,6 +344,61 @@ export interface Database {
           created_at?: string
         }
       }
+      issue_reports: {
+        Row: {
+          id: string
+          user_id: string
+          title: string | null
+          description: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string | null
+          description?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string | null
+          description?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      admin_audit_log: {
+        Row: {
+          id: string
+          admin_id: string
+          action: string
+          target_type: string
+          target_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_id: string
+          action: string
+          target_type: string
+          target_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_id?: string
+          action?: string
+          target_type?: string
+          target_id?: string
+          created_at?: string
+        }
+      }
     }
     Functions: {
       increment_upvotes: {

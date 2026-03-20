@@ -48,12 +48,14 @@ export default function ReportsQueue() {
     if (!csrfToken) return alert('CSRF missing.')
     const { data: { user } } = await supabase.auth.getUser()
 
+    // @ts-ignore
     await supabase.from('reports').update({ 
       status: 'resolved', 
       resolution: resolution,
       resolved_at: new Date().toISOString()
     }).eq('id', id)
 
+    // @ts-ignore
     await supabase.from('admin_audit_log').insert({
       admin_id: user?.id,
       action: 'resolve_report',

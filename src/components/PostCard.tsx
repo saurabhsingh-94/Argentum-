@@ -72,10 +72,10 @@ export default function PostCard({
       viewport={{ once: true }}
       whileHover={{ y: -2 }}
       className={`
-        relative group bg-card glass-card rounded-2xl border border-border transition-all duration-300 hover:border-foreground/20 hover:shadow-2xl
+        relative group bg-card glass-card rounded-2xl border border-border transition-all duration-300 hover:border-border-accent hover:shadow-2xl
         ${post.verification_status === 'verified' ? 'border-l-2 border-l-green-500 hover:shadow-[0_0_30px_rgba(34,197,94,0.05)]' : ''}
-        ${post.is_priority ? 'border-amber-500 bg-gradient-to-br from-card via-amber-500/5 to-amber-500/10 shadow-[0_0_50px_rgba(245,158,11,0.08)] ring-1 ring-amber-500/20' : ''}
-        ${post.category === 'Speak' && !post.is_priority ? 'border-amber-500/40 bg-card hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.03)]' : ''}
+        ${post.is_priority ? 'border-amber-500 bg-gradient-to-br from-bg-surface via-amber-500/5 to-amber-500/10 shadow-[0_0_50px_rgba(245,158,11,0.08)] ring-1 ring-amber-500/20' : ''}
+        ${post.category === 'Speak' && !post.is_priority ? 'border-amber-500/40 bg-bg-surface hover:border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.03)]' : ''}
       `}
     >
       <div className="p-5 flex flex-col h-full">
@@ -84,7 +84,7 @@ export default function PostCard({
           <div className="flex items-center gap-3">
             <Link href={`/profile/${post.users?.username}`} className="relative group/avatar">
               <div 
-                className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black text-foreground shadow-lg overflow-hidden border border-border"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black text-text-primary shadow-lg overflow-hidden border border-border"
                 style={{ background: post.users?.avatar_url ? 'none' : getGradientFromUsername(post.users?.username || 'builder') }}
               >
                 {post.users?.avatar_url ? (
@@ -97,7 +97,7 @@ export default function PostCard({
             
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <Link href={`/profile/${post.users?.username}`} className="text-sm font-semibold text-foreground hover:text-green-500 transition-colors">
+                <Link href={`/profile/${post.users?.username}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">
                   {post.users?.display_name || post.users?.username}
                 </Link>
                 {isOwner && (
@@ -116,7 +116,7 @@ export default function PostCard({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-foreground/40">
+              <div className="flex items-center gap-2 text-[10px] text-text-muted">
                 <span className="font-mono">@{post.users?.username}</span>
                 <span>•</span>
                 <span>Joined {post.users?.created_at ? new Date(post.users.created_at).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '...'}</span>
@@ -127,7 +127,7 @@ export default function PostCard({
           <div className="relative">
             <button 
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 text-foreground/40 hover:text-foreground transition-colors rounded-lg hover:bg-foreground/5 opacity-0 group-hover:opacity-100"
+              className="p-2 text-text-muted hover:text-text-primary transition-colors rounded-lg hover:bg-bg-surface opacity-0 group-hover:opacity-100"
             >
               <MoreHorizontal size={18} />
             </button>
@@ -139,13 +139,13 @@ export default function PostCard({
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl z-[100] p-1"
                 >
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
+                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary hover:bg-bg-surface rounded-lg transition-all">
                     <Bookmark size={14} /> Save to collection
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
+                  <button className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary hover:bg-bg-surface rounded-lg transition-all">
                     <Share2 size={14} /> Share post
                   </button>
-                  <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground/60 hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
+                  <button onClick={copyLink} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary hover:bg-bg-surface rounded-lg transition-all">
                     <Link2 size={14} /> Copy link
                   </button>
                   {!isOwner && (
@@ -164,7 +164,7 @@ export default function PostCard({
           {skills.slice(0, 3).map((skill: string) => (
             <span 
               key={skill} 
-              className="px-2 py-0.5 rounded-full bg-foreground/5 border border-border text-[9px] font-bold text-foreground/40 hover:border-border/50 transition-colors"
+              className="px-2 py-0.5 rounded-full bg-bg-surface border border-border text-[9px] font-bold text-text-muted hover:border-border-accent transition-colors"
             >
               {skill}
             </span>
@@ -173,15 +173,15 @@ export default function PostCard({
 
         {/* Content Area */}
         <Link href={`/post/${post.id}`} className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-foreground leading-snug group-hover:text-green-500 glass:glass-text transition-colors">
+          <h3 className="text-base font-semibold text-text-primary leading-snug group-hover:text-primary glass:glass-text transition-colors">
             {post.title}
           </h3>
-          <p className="text-sm text-foreground/60 line-clamp-3 leading-relaxed">
+          <p className="text-sm text-text-secondary line-clamp-3 leading-relaxed">
             {post.content.replace(/[#*`]/g, '')}
           </p>
 
           {codeSnippet && (
-            <div className="mt-2 bg-background rounded-xl border border-border p-3 overflow-hidden font-mono text-[11px] text-foreground/40 opacity-60 group-hover:opacity-100 transition-opacity">
+            <div className="mt-2 bg-background rounded-xl border border-border p-3 overflow-hidden font-mono text-[11px] text-text-muted opacity-60 group-hover:opacity-100 transition-opacity">
               <pre className="line-clamp-4">
                 <code>{codeSnippet}</code>
               </pre>
@@ -199,11 +199,11 @@ export default function PostCard({
 
           <div className="flex flex-wrap gap-2 mt-2">
             {post.category && (
-              <span className="text-[10px] font-bold text-foreground/60 hover:text-foreground transition-all font-mono">
+              <span className="text-[10px] font-bold text-text-secondary hover:text-text-primary transition-all font-mono">
                 #{post.category.toLowerCase()}
               </span>
             )}
-            <span className="text-[10px] font-bold text-foreground/10 font-mono italic">#argentum</span>
+            <span className="text-[10px] font-bold text-text-muted font-mono italic">#argentum</span>
           </div>
         </Link>
 
@@ -213,15 +213,15 @@ export default function PostCard({
             <ReactionButton postId={post.id} initialReactions={reactions} currentUserId={currentUserId} />
             
             <div className="flex items-center gap-4 ml-2 border-l border-border pl-4">
-              <Link href={`/post/${post.id}#comments`} className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground transition-colors group/action">
+              <Link href={`/post/${post.id}#comments`} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors group/action">
                 <MessageCircle size={16} className="group-hover/action:scale-110 transition-transform" />
                 <span className="text-[10px] font-black">{commentCount}</span>
               </Link>
-              <button className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground transition-colors group/action">
+              <button className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors group/action">
                 <ArrowUp size={16} className="group-hover/action:scale-110 transition-transform" />
                 <span className="text-[10px] font-black">{post.upvotes || 0}</span>
               </button>
-              <Link href={`/collab?post=${post.id}`} className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground transition-colors group/action">
+              <Link href={`/collab?post=${post.id}`} className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors group/action">
                 <Handshake size={16} className="group-hover/action:scale-110 transition-transform" />
                 <span className="text-[10px] font-black hidden md:inline">Collab</span>
               </Link>
@@ -230,11 +230,11 @@ export default function PostCard({
 
           <div className="flex items-center gap-3">
              <div className="hidden lg:flex flex-col items-end">
-                <div className="flex items-center gap-1 text-[8px] font-mono text-foreground/20 uppercase tracking-widest">
+                <div className="flex items-center gap-1 text-[8px] font-mono text-text-muted/50 uppercase tracking-widest">
                    {post.verification_status === 'verified' && <Check size={8} className="text-green-500" />}
                    Hash
                 </div>
-                <span className="text-[9px] font-mono text-foreground/10 truncate w-16 text-right">
+                <span className="text-[9px] font-mono text-text-muted/30 truncate w-16 text-right">
                   {post.content_hash?.slice(0, 10)}
                 </span>
              </div>
