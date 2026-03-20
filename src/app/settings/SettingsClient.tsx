@@ -213,7 +213,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                             )}
                          </div>
                          <div className="flex-1">
-                            <p className="text-xs font-black text-foreground/40 uppercase tracking-widest mb-1">Display Name</p>
+                            <p className="text-xs font-black text-text-muted uppercase tracking-widest mb-1">Display Name</p>
                             <h3 className="text-lg font-bold">{profile?.display_name || profile?.username || 'Anonymous'}</h3>
                          </div>
                          <button 
@@ -227,7 +227,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                       <div className="grid gap-4">
                         <div className="p-6 bg-card/5 border border-border rounded-2xl flex items-center justify-between">
                            <div>
-                             <p className="text-[10px] font-black text-foreground/40 uppercase tracking-widest mb-1">Username</p>
+                             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Username</p>
                              <p className="text-sm text-foreground">@{profile?.username || 'anonymous'}</p>
                            </div>
                            <button 
@@ -237,14 +237,14 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                                  updateProfile({ username: newUsername.toLowerCase().replace(/[^a-z0-9_]/g, '') })
                                }
                              }}
-                             className="text-[10px] font-black text-foreground/40 border-b border-border hover:border-foreground transition-all uppercase tracking-widest p-1"
+                             className="text-[10px] font-black text-text-muted border-b border-border hover:border-foreground transition-all uppercase tracking-widest p-1"
                            >
                              Change
                            </button>
                         </div>
 
                          <div className="p-6 bg-card/5 border border-border rounded-2xl">
-                           <p className="text-[10px] font-black text-foreground/40 uppercase tracking-widest mb-4">Connected Accounts</p>
+                           <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4">Connected Accounts</p>
                            <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -265,7 +265,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                                 {isGoogleConnected ? (
                                   <span className="text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-2 py-1 rounded-md">Connected</span>
                                 ) : (
-                                  <button onClick={() => handleConnect('google')} className="text-[10px] font-black text-foreground/40 border-b border-border/50 hover:border-foreground transition-all uppercase tracking-widest p-1">Connect</button>
+                                  <button onClick={() => handleConnect('google')} className="text-[10px] font-black text-text-muted border-b border-border/50 hover:border-foreground transition-all uppercase tracking-widest p-1">Connect</button>
                                 )}
                               </div>
                            </div>
@@ -279,14 +279,14 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                   <div className="space-y-8">
                     <div>
                       <h2 className="text-xl font-black mb-2">Privacy</h2>
-                      <p className="text-sm text-foreground/40">Control who can see your activity and profile.</p>
+                      <p className="text-sm text-text-muted">Control who can see your activity and profile.</p>
                     </div>
 
                     <div className="space-y-4">
                       <div className="p-6 bg-card/5 border border-border rounded-2xl flex items-center justify-between">
                          <div>
                             <p className="text-sm font-bold text-foreground mb-1">Profile Visibility</p>
-                            <p className="text-xs text-gray-500">Make your profile visible to everyone.</p>
+                            <p className="text-xs text-text-muted">Make your profile visible to everyone.</p>
                          </div>
                          <button 
                           onClick={() => profile && updateProfile({ is_public: !profile.is_public })}
@@ -297,7 +297,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                       </div>
 
                       <div className="p-6 bg-card/5 border border-border rounded-2xl border-l-2 border-l-green-500/30">
-                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Messaging & Presence</p>
+                         <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4">Messaging & Presence</p>
                          <div className="space-y-6">
                             <div className="flex items-center justify-between">
                                <p className="text-sm">Show online status</p>
@@ -321,13 +321,13 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2">Notifications</h2>
-                      <p className="text-sm text-foreground/40">Stay updated on your activity.</p>
+                      <p className="text-sm text-text-muted">Stay updated on your activity.</p>
                     </div>
 
                     <div className="space-y-3">
                        {['Upvotes on my posts', 'Comments on my posts', 'New followers', 'Direct messages', 'Post verified'].map((item) => (
                          <div key={item} className="p-5 bg-card/5 border border-border rounded-2xl flex items-center justify-between group hover:bg-card/10 transition-all">
-                            <span className="text-sm text-gray-200">{item}</span>
+                            <span className="text-sm text-text-primary">{item}</span>
                             <button className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center text-green-500">
                                <CheckCircle size={18} />
                             </button>
@@ -335,7 +335,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                        ))}
                     </div>
 
-                    <button className="w-full mt-4 p-4 rounded-2xl bg-card border border-border text-xs font-black uppercase tracking-widest text-silver hover:brightness-110 transition-all flex items-center justify-center gap-3">
+                    <button className="w-full mt-4 p-4 rounded-2xl bg-card border border-border text-xs font-black uppercase tracking-widest text-text-primary hover:brightness-110 transition-all flex items-center justify-center gap-3">
                        <Smartphone size={16} />
                        Enable Browser Push Notifications
                     </button>
@@ -346,19 +346,19 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                    <div className="space-y-8">
                       <div>
                         <h2 className="text-xl font-black mb-2">Messaging</h2>
-                        <p className="text-sm text-foreground/40">Advanced security for your conversations.</p>
+                        <p className="text-sm text-text-muted">Advanced security for your conversations.</p>
                       </div>
 
                       <div className="p-6 bg-card/5 border border-border rounded-2xl space-y-6">
                          <div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Default Disappearing Messages</p>
+                            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4">Default Disappearing Messages</p>
                             <div className="grid grid-cols-4 gap-2">
                                {['Off', '24h', '1 Week', 'Lifetime'].map((opt) => (
                                  <button 
                                   key={opt}
                                   onClick={() => handleUpdateDisappearing(opt)}
                                   className={`p-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    disappearingMessages === opt ? 'bg-card border-border silver-glow text-foreground' : 'border-border/20 text-gray-500 hover:border-border/50'
+                                    disappearingMessages === opt ? 'bg-card border-border silver-glow text-foreground' : 'border-border/20 text-text-muted hover:border-border/50'
                                   }`}
                                  >
                                    {opt}
@@ -374,7 +374,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2">Security</h2>
-                      <p className="text-sm text-foreground/40">Protect your data and encryption keys.</p>
+                      <p className="text-sm text-text-muted">Protect your data and encryption keys.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -385,8 +385,8 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                           >
                              <RefreshCw size={24} className="text-orange-500 group-hover:rotate-180 transition-transform duration-500" />
                              <div>
-                                <p className="text-xs font-black uppercase tracking-widest text-silver">Regenerate Keys</p>
-                                <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">Old messages will be unreadable</p>
+                                <p className="text-xs font-black uppercase tracking-widest text-text-primary">Regenerate Keys</p>
+                                <p className="text-[9px] text-text-muted mt-1 uppercase tracking-widest">Old messages will be unreadable</p>
                              </div>
                           </button>
                           <button 
@@ -395,7 +395,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                           >
                              <Download size={24} className="text-blue-500 group-hover:translate-y-1 transition-transform" />
                              <div>
-                                <p className="text-xs font-black uppercase tracking-widest text-silver">Download Data</p>
+                                <p className="text-xs font-black uppercase tracking-widest text-text-primary">Download Data</p>
                                 <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest">Export profile as JSON</p>
                              </div>
                           </button>
@@ -408,13 +408,13 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                   <div className="space-y-8">
                      <div>
                       <h2 className="text-xl font-black mb-2 glass:glass-text">Appearance</h2>
-                      <p className="text-sm text-foreground/40">Customize your visual experience.</p>
+                      <p className="text-sm text-text-muted">Customize your visual experience.</p>
                     </div>
 
                     <div className="space-y-4">
                        <div className="p-6 bg-card/5 border border-border rounded-2xl flex flex-col gap-6">
                           <div className="flex items-center gap-3">
-                             <Moon size={18} className="text-silver" />
+                             <Moon size={18} className="text-text-primary" />
                              <span className="text-sm font-bold">Theme</span>
                           </div>
                           <div className="flex gap-2 p-1 bg-background/50 rounded-2xl border border-border/50">
@@ -425,7 +425,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                                 className={`flex-1 px-4 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
                                   theme === t 
                                     ? 'bg-foreground text-background shadow-glow border-foreground' 
-                                    : 'bg-card/30 border-transparent text-foreground/40 hover:text-foreground hover:bg-card/50'
+                                    : 'bg-card/30 border-transparent text-text-muted hover:text-foreground hover:bg-card/50'
                                 }`}
                               >
                                 {t}
@@ -437,7 +437,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                         <div className="p-6 bg-card/5 border border-border rounded-2xl flex items-center justify-between">
                           <div>
                             <p className="text-sm font-bold text-foreground mb-1">Compact Mode</p>
-                            <p className="text-xs text-gray-500">Reduces padding across the application.</p>
+                            <p className="text-xs text-text-muted">Reduces padding across the application.</p>
                           </div>
                           <button 
                             onClick={toggleCompactMode}
@@ -484,7 +484,7 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                                  <input 
                                   value={deleteConfirm}
                                   onChange={(e) => setDeleteConfirm(e.target.value)}
-                                  className="w-full bg-[#111] border border-red-500/30 rounded-xl px-4 py-3 text-red-500 font-black placeholder:text-red-500/20 focus:outline-none" 
+                                  className="w-full bg-background border border-red-500/30 rounded-xl px-4 py-3 text-red-500 font-black placeholder:text-red-500/20 focus:outline-none" 
                                   placeholder="DELETE"
                                  />
                                  <button 
