@@ -2,8 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -22,7 +20,6 @@ export async function POST(request: Request) {
 
     // Ensure only admins can broadcast
     if (!profile || profile.role !== 'admin') {
-      // For now, if 'role' column doesn't exist, we fallback to checking ADMIN_USER_IDS
       const adminIds = (process.env.ADMIN_USER_IDS || '').split(',');
       if (!adminIds.includes(user.id)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -35,7 +32,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing subject or content' }, { status: 400 });
     }
 
-    // 2. Fetch all users to send email to
+    // 2. Initialize Resend inside the handler to prevent build-time errors
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Resend API key not configured' }, { status: 500 });
+    }
+    const resend = new Resend(apiKey);
+
+    // 3. Fetch all users to send email to
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('email')
@@ -49,11 +53,9 @@ export async function POST(request: Request) {
 
     console.log(`Broadcasting update to ${users.length} users: [${subject}]`);
 
-    // 3. Send emails via Resend
-    // Note: For large lists, you should use a background job/queue.
+    // 4. Send emails via Resend
     const sender = process.env.SENDER_EMAIL || 'argentum.auth@gmail.com';
     
-    // Batching logic (Resend allows up to 100 emails per batch in some plans)
     const emails = (users as any[]).map(u => ({
       from: `Argentum <${sender}>`,
       to: [u.email],
@@ -72,8 +74,6 @@ export async function POST(request: Request) {
       `,
     }));
 
-    // For simplicity, we send them one by one if not using batch API
-    // Optimized: Promise.all in small chunks if necessary.
     for (const email of emails) {
       await resend.emails.send(email);
     }
