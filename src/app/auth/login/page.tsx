@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Github, Mail, Lock, LogIn, ArrowRight, UserPlus, AlertCircle, AtSign } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
+import TwoFactorLogin from '@/components/TwoFactorLogin'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -14,6 +16,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   
   const [username, setUsername] = useState('')
+  const [showMfa, setShowMfa] = useState(false)
+  const [factorId, setFactorId] = useState<string | null>(null)
+  const router = useRouter()
   
   const supabase = createClient() as any
 
@@ -82,6 +87,42 @@ export default function LoginPage() {
       setError("Please confirm your email address to continue.")
       setIsLoading(false)
     } else {
+      // Check for MFA
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
+      if (factorsError) {
+        setError(factorsError.message)
+        setIsLoading(false)
+        return
+      }
+
+      const totpFactor = factors.all.find((f: any) => f.factor_type === 'totp' && f.status === 'verified')
+      
+      if (totpFactor) {
+        setFactorId(totpFactor.id)
+        setShowMfa(true)
+        setIsLoading(false)
+      } else {
+        setIsLoading(false)
+        router.push('/feed')
+      }
+    }
+  }
+
+  const handleMfaVerify = async (otp: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: factorId!,
+        code: otp
+      })
+
+      if (error) throw error
+
+      router.push('/feed')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
       setIsLoading(false)
     }
   }
@@ -157,157 +198,175 @@ export default function LoginPage() {
           <div className="absolute -top-1 -right-1 w-8 h-8 border-t border-r border-silver/40 rounded-tr-xl" />
           
           <AnimatePresence mode="wait">
-            <motion.div
-              key={isLogin ? 'login' : 'signup'}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
-              <h1 className="text-xl font-bold text-white mb-2 tracking-tight">
-                {isLogin ? 'Welcome back, Builder' : 'Join the Protocol'}
-              </h1>
-              <p className="text-sm text-gray-500 mb-8 font-medium">
-                {isLogin ? 'Sign in to capture your ship logs.' : 'Create an account to start your build streak.'}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+            {showMfa ? (
+              <TwoFactorLogin 
+                onVerify={handleMfaVerify}
+                onCancel={() => setShowMfa(false)}
+                loading={isLoading}
+                error={error}
+              />
+            ) : (
+              <motion.div
+                key="login-form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isLogin ? 'login-text' : 'signup-text'}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <h1 className="text-xl font-bold text-white mb-2 tracking-tight">
+                      {isLogin ? 'Welcome back, Builder' : 'Join the Protocol'}
+                    </h1>
+                    <p className="text-sm text-gray-500 mb-8 font-medium">
+                      {isLogin ? 'Sign in to capture your ship logs.' : 'Create an account to start your build streak.'}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
 
-          {error && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex flex-col gap-3 text-red-500 text-xs font-bold animate-shake">
-              <div className="flex items-center gap-3">
-                <AlertCircle size={14} />
-                <span>{error}</span>
-              </div>
-              {(error.includes("verify") || error.includes("confirm")) && !error.includes("resent") && (
-                <button 
-                  onClick={resendVerification}
-                  className="text-[10px] uppercase tracking-widest text-white hover:text-green-400 transition-colors text-left font-black"
-                >
-                  Resend Verification Link →
-                </button>
-              )}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3 mb-8">
-            <button 
-              onClick={() => handleOAuth('github')}
-              disabled={isLoading}
-              className="flex items-center justify-center gap-3 w-full bg-[#111] hover:bg-[#1a1a1a] border border-white/5 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98]"
-            >
-              <Github size={16} />
-              <span>Continue with GitHub</span>
-            </button>
-            <button 
-              onClick={() => handleOAuth('google')}
-              disabled={isLoading}
-              className="flex items-center justify-center gap-3 w-full bg-[#111] hover:bg-[#1a1a1a] border border-white/5 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98]"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.91 3.23-2.02 4.35-1.11 1.11-2.83 2.15-5.82 2.15-4.67 0-8.52-3.8-8.52-8.5s3.85-8.5 8.52-8.5c2.56 0 4.41.91 5.8 2.3l2.3-2.3C18.41 1.54 15.68 0 12.48 0 6.94 0 2.45 4.5 2.45 10s4.49 10 10.03 10c3.02 0 5.3-.99 7.03-2.73 1.77-1.78 2.33-4.3 2.33-6.33 0-.6-.05-1.18-.15-1.72h-9.2z"/></svg>
-              <span>Continue with Google</span>
-            </button>
-          </div>
-
-          <div className="relative mb-8 text-center">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/5"></div>
-            </div>
-            <span className="relative z-10 bg-background px-4 text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em]">
-              OR USE EMAIL
-            </span>
-          </div>
-
-          <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
-            <AnimatePresence>
-              {!isLogin && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex flex-col gap-2 overflow-hidden"
-                >
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Username</label>
-                  <div className="relative">
-                    <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
-                    <input 
-                      type="text" 
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="johndoe"
-                      required={!isLogin}
-                      className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
-                    />
+                {error && (
+                  <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex flex-col gap-3 text-red-500 text-xs font-bold animate-shake">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle size={14} />
+                      <span>{error}</span>
+                    </div>
+                    {(error.includes("verify") || error.includes("confirm")) && !error.includes("resent") && (
+                      <button 
+                        onClick={resendVerification}
+                        className="text-[10px] uppercase tracking-widest text-white hover:text-green-400 transition-colors text-left font-black"
+                      >
+                        Resend Verification Link →
+                      </button>
+                    )}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
 
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  required
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
-                />
-              </div>
-            </div>
+                <div className="flex flex-col gap-3 mb-8 glass-perspective">
+                  <button 
+                    onClick={() => handleOAuth('github')}
+                    disabled={isLoading}
+                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98] shadow-premium"
+                  >
+                    <Github size={16} />
+                    <span>Continue with GitHub</span>
+                  </button>
+                  <button 
+                    onClick={() => handleOAuth('google')}
+                    disabled={isLoading}
+                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98] shadow-premium"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.91 3.23-2.02 4.35-1.11 1.11-2.83 2.15-5.82 2.15-4.67 0-8.52-3.8-8.52-8.5s3.85-8.5 8.52-8.5c2.56 0 4.41.91 5.8 2.3l2.3-2.3C18.41 1.54 15.68 0 12.48 0 6.94 0 2.45 4.5 2.45 10s4.49 10 10.03 10c3.02 0 5.3-.99 7.03-2.73 1.77-1.78 2.33-4.3 2.33-6.33 0-.6-.05-1.18-.15-1.72h-9.2z"/></svg>
+                    <span>Continue with Google</span>
+                  </button>
+                </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
-                />
-              </div>
-            </div>
+                <div className="relative mb-8 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/5"></div>
+                  </div>
+                  <span className="relative z-10 bg-background px-4 text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em]">
+                    OR USE EMAIL
+                  </span>
+                </div>
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className={`
-                mt-4 w-full flex items-center justify-center gap-2 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-[0.98]
-                ${isLoading ? 'bg-gray-800 text-gray-400 cursor-not-allowed' : 'silver-metallic shadow-glow hover:brightness-110'}
-              `}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={isLogin ? 'signin-btn' : 'signup-btn'}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2"
-                >
-                  {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
-                  {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
-                </motion.div>
-              </AnimatePresence>
-            </button>
-          </form>
+                <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
+                  <AnimatePresence>
+                    {!isLogin && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex flex-col gap-2 overflow-hidden"
+                      >
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Username</label>
+                        <div className="relative">
+                          <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                          <input 
+                            type="text" 
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="johndoe"
+                            required={!isLogin}
+                            className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-          <div className="mt-8 text-center text-[11px] font-bold">
-            <span className="text-gray-600 uppercase tracking-tight">
-              {isLogin ? "Don't have an account? " : "Already registered? "}
-            </span>
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-white hover:text-green-400 transition-colors uppercase tracking-tight"
-            >
-              {isLogin ? 'Sign Up' : 'Log In'}
-            </button>
-          </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                      <input 
+                        type="email" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@company.com"
+                        required
+                        className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                      <input 
+                        type="password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={isLoading}
+                    className={`
+                      mt-4 w-full flex items-center justify-center gap-2 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-[0.98]
+                      ${isLoading ? 'bg-gray-800 text-gray-400 cursor-not-allowed' : 'silver-metallic shadow-glow hover:brightness-110'}
+                    `}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={isLogin ? 'signin-btn' : 'signup-btn'}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center gap-2"
+                      >
+                        {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
+                        {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
+                      </motion.div>
+                    </AnimatePresence>
+                  </button>
+                </form>
+
+                <div className="mt-8 text-center text-[11px] font-bold">
+                  <span className="text-gray-600 uppercase tracking-tight">
+                    {isLogin ? "Don't have an account? " : "Already registered? "}
+                  </span>
+                  <button 
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-white hover:text-green-400 transition-colors uppercase tracking-tight"
+                  >
+                    {isLogin ? 'Sign Up' : 'Log In'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
         
         <p className="mt-12 text-center text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] leading-relaxed">

@@ -30,6 +30,7 @@ import { Database } from '@/types/database'
 import { useTheme } from '@/context/ThemeContext'
 import { resetKeys } from '@/lib/crypto'
 import { Loader2 } from 'lucide-react'
+import TwoFactorModal from '@/components/TwoFactorModal'
 
 type SettingsSection = 'account' | 'privacy' | 'notifications' | 'messaging' | 'security' | 'appearance' | 'danger'
 
@@ -49,12 +50,44 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
   const [disappearingMessages, setDisappearingMessages] = useState('Off')
   const [compactMode, setCompactMode] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
-
+  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
+  const [mfaFactors, setMfaFactors] = useState<any[]>([])
+  const [isMfaLoading, setIsMfaLoading] = useState(false)
   useEffect(() => {
     const savedCompact = typeof window !== 'undefined' ? localStorage.getItem('appearance_compact') === 'true' : false
     setCompactMode(savedCompact)
     setDisappearingMessages(typeof window !== 'undefined' ? (localStorage.getItem('ag_disappearing_messages') || 'Off') : 'Off')
+    
+    fetchMfaFactors()
   }, [])
+
+  const fetchMfaFactors = async () => {
+    setIsMfaLoading(true)
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors()
+      if (error) throw error
+      setMfaFactors(data?.all || [])
+    } catch (err) {
+      console.error('Error fetching MFA factors:', err)
+    } finally {
+      setIsMfaLoading(false)
+    }
+  }
+
+  const handleUnenrollFactor = async (factorId: string) => {
+    if (!confirm("Are you sure you want to disable 2FA? This will make your account less secure.")) return
+    setIsMfaLoading(true)
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId })
+      if (error) throw error
+      await fetchMfaFactors()
+      alert("2FA has been disabled.")
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setIsMfaLoading(false)
+    }
+  }
 
   const updateProfile = async (updates: Partial<Database['public']['Tables']['users']['Row']>) => {
     if (!initialUser) return
@@ -428,7 +461,68 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                       <p className="text-sm text-text-muted">Protect your data and encryption keys.</p>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                       <div className="p-8 bg-card/5 border border-border rounded-[2rem] flex flex-col gap-6 relative overflow-hidden group">
+                          {/* Decorative Background */}
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-silver/5 blur-[50px] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-silver/10 transition-all duration-700" />
+                          
+                          <div className="flex items-start justify-between relative z-10">
+                            <div className="flex items-center gap-4">
+                               <div className="w-12 h-12 rounded-2xl bg-primary-silver/10 border border-primary-silver/20 flex items-center justify-center shadow-premium">
+                                  <Shield className="text-primary-silver" size={24} />
+                               </div>
+                               <div>
+                                  <h3 className="text-sm font-black uppercase tracking-widest">Multi-Factor Auth</h3>
+                                  <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-0.5">Time-based One-Time Password (TOTP)</p>
+                               </div>
+                            </div>
+                            {mfaFactors.length > 0 ? (
+                               <span className="text-[10px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20 shadow-glow flex items-center gap-1.5">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                 Active
+                               </span>
+                            ) : (
+                               <span className="text-[10px] font-black text-muted uppercase tracking-widest bg-foreground/5 px-3 py-1.5 rounded-full border border-border">Inactive</span>
+                            )}
+                          </div>
+
+                          <div className="space-y-4 relative z-10">
+                             <p className="text-sm text-foreground/70 leading-relaxed max-w-lg">
+                               Enhance your protocol security by requiring a unique verification code from your authenticator app every time you sign in.
+                             </p>
+                             
+                             {mfaFactors.length > 0 ? (
+                               <div className="flex flex-col gap-4">
+                                  {mfaFactors.map((factor) => (
+                                    <div key={factor.id} className="flex items-center justify-between p-4 bg-foreground/5 border border-border rounded-xl">
+                                       <div className="flex items-center gap-3">
+                                          <Smartphone size={16} className="text-muted" />
+                                          <div className="flex flex-col">
+                                             <span className="text-xs font-bold">{factor.friendly_name || 'Authenticator App'}</span>
+                                             <span className="text-[9px] text-muted font-mono">ID: {factor.id.slice(0, 8)}...</span>
+                                          </div>
+                                       </div>
+                                       <button 
+                                         onClick={() => handleUnenrollFactor(factor.id)}
+                                         disabled={isMfaLoading}
+                                         className="text-[10px] font-black text-red-500/60 hover:text-red-500 transition-colors uppercase tracking-widest"
+                                       >
+                                         Disable
+                                       </button>
+                                    </div>
+                                  ))}
+                               </div>
+                             ) : (
+                               <button 
+                                 onClick={() => setIs2FAModalOpen(true)}
+                                 className="w-full py-4 rounded-2xl bg-foreground text-background text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all silver-metallic shadow-glow"
+                               >
+                                 Enable 2FA Protection
+                               </button>
+                             )}
+                          </div>
+                       </div>
+
                        <div className="grid grid-cols-2 gap-4">
                           <button 
                             onClick={handleRegenerateKeys}
@@ -556,15 +650,12 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
         </div>
       </div>
 
-       <style jsx global>{`
-        .silver-glow {
-          box-shadow: 0 0 15px rgba(192, 192, 192, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .shadow-glow-red {
-          box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
-        }
-      `}</style>
+      <TwoFactorModal 
+        isOpen={is2FAModalOpen} 
+        onClose={() => setIs2FAModalOpen(false)} 
+        onSuccess={fetchMfaFactors}
+      />
+
     </div>
   )
 }
