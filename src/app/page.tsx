@@ -25,7 +25,6 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden pb-20 relative transition-colors duration-500">
       {/* Background Grid - Only visible in Light mode via CSS */}
-      <div className="absolute inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-[0.4] dark:opacity-[0.1] glass:hidden" />
       {/* Hero Section */}
       <section className="relative pt-32 pb-40 px-4 lg:px-6">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none overflow-hidden">

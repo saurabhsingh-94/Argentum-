@@ -150,7 +150,38 @@ body {
     box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 7. Shared Silver Utility Classes */
+/* 7. Global Interactive & Tactile Feedback */
+button, 
+a, 
+[role="button"],
+.interactive {
+  cursor: pointer;
+  transition: 
+    transform 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.1s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active, 
+a:active, 
+[role="button"]:active,
+.interactive:active {
+  transform: scale(0.97);
+  filter: brightness(0.9);
+}
+
+/* Specific component overrides for cleaner feel */
+.no-press:active {
+  transform: none !important;
+}
+
+.glass-card:active {
+  transform: scale(0.99); /* Subtle for large panels */
+}
+
+/* 8. Shared Silver Utility Classes */
 .silver-glow-text {
   text-shadow: var(--silver-neon, 0 0 8px rgba(192, 192, 192, 0.4));
 }
@@ -181,16 +212,13 @@ body {
 
 
 
-/* Minimal Background Grid */
-body::before {
+/* 9. Background Polish */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: 
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 60px 60px;
-  background-position: center center;
+  background: radial-gradient(circle at 50% 0%, var(--primary-silver) 0%, transparent 70%);
+  opacity: 0.03;
   pointer-events: none;
   z-index: -1;
 }
