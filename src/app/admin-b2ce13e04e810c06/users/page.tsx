@@ -65,55 +65,61 @@ export default function UsersManagement() {
   const handleModeration = async (action: string, userId: string, details: { username?: string } = {}) => {
     if (!csrfToken) return alert('CSRF token missing. Please refresh.')
 
-    // In a real app, we'd call an API route that checks the CSRF token in middleware
-    // For this implementation, we'll simulate the persistence but ensure we track it in audit
-    const { data: { user: adminUser } } = await supabase.auth.getUser()
-    
-    if (action === 'ban') {
-      const until = banDuration === 'permanent' ? null : new Date(Date.now() + parseInt(banDuration) * 24 * 60 * 60 * 1000).toISOString()
-      // @ts-ignore
-      await supabase.from('users').update({ 
-        is_banned: true, 
-        ban_reason: banReason, 
-        banned_until: until,
-        banned_at: new Date().toISOString()
-      }).eq('id', userId)
+    setLoading(true)
+    try {
+      const { data: { user: adminUser } } = await supabase.auth.getUser()
+      
+      if (action === 'delete') {
+        const response = await fetch('/api/admin/users/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', userId, token: csrfToken })
+        })
 
-      // @ts-ignore
-      await supabase.from('admin_audit_log').insert({
-        admin_id: adminUser?.id,
-        action: 'ban_user',
-        target_type: 'user',
-        target_id: userId,
-        details: { reason: banReason, until }
-      })
-    } else if (action === 'unban') {
-      // @ts-ignore
-      await supabase.from('users').update({ is_banned: false, ban_reason: null, banned_until: null }).eq('id', userId)
-      // @ts-ignore
-      await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'unban_user', target_type: 'user', target_id: userId })
-    } else if (action === 'make_admin') {
-      // @ts-ignore
-      await supabase.from('users').update({ is_admin: true }).eq('id', userId)
-      // @ts-ignore
-      await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'promote_to_admin', target_type: 'user', target_id: userId })
-    } else if (action === 'remove_admin') {
-      // @ts-ignore
-      await supabase.from('users').update({ is_admin: false }).eq('id', userId)
-      // @ts-ignore
-      await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'demote_from_admin', target_type: 'user', target_id: userId })
-    } else if (action === 'delete') {
-      // In real app, this would delete messages, posts, etc.
-      // @ts-ignore
-      await supabase.from('users').delete().eq('id', userId)
-      // @ts-ignore
-      await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'delete_account', target_type: 'user', target_id: userId, details: { deleted_username: details.username } })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || 'Failed to delete user')
+        
+        alert('User identity destroyed.')
+      } else {
+        // Handle other actions (ban, make_admin, etc.) via Supabase client (assuming RLS allows)
+        if (action === 'ban') {
+          const until = banDuration === 'permanent' ? null : new Date(Date.now() + parseInt(banDuration) * 24 * 60 * 60 * 1000).toISOString()
+          await supabase.from('users').update({ 
+            is_banned: true, 
+            ban_reason: banReason, 
+            banned_until: until,
+            banned_at: new Date().toISOString()
+          }).eq('id', userId)
+
+          await supabase.from('admin_audit_log').insert({
+            admin_id: adminUser?.id,
+            action: 'ban_user',
+            target_type: 'user',
+            target_id: userId,
+            details: { reason: banReason, until }
+          })
+        } else if (action === 'unban') {
+          await supabase.from('users').update({ is_banned: false, ban_reason: null, banned_until: null }).eq('id', userId)
+          await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'unban_user', target_type: 'user', target_id: userId })
+        } else if (action === 'make_admin') {
+          await supabase.from('users').update({ is_admin: true }).eq('id', userId)
+          await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'promote_to_admin', target_type: 'user', target_id: userId })
+        } else if (action === 'remove_admin') {
+          await supabase.from('users').update({ is_admin: false }).eq('id', userId)
+          await supabase.from('admin_audit_log').insert({ admin_id: adminUser?.id, action: 'demote_from_admin', target_type: 'user', target_id: userId })
+        }
+      }
+
+      fetchUsers()
+    } catch (err: any) {
+      console.error('Moderation error:', err)
+      alert(`Action failed: ${err.message}`)
+    } finally {
+      setLoading(false)
+      setShowBanModal(null)
+      setShowDeleteModal(null)
+      setBanReason('')
     }
-
-    fetchUsers()
-    setShowBanModal(null)
-    setShowDeleteModal(null)
-    setBanReason('')
   }
 
   return (
