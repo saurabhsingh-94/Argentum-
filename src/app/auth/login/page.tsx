@@ -133,18 +133,20 @@ export default function LoginPage() {
       return
     }
     setIsLoading(true)
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-      options: {
-        emailRedirectTo: `${getURL()}auth/callback`
-      }
-    })
-    setIsLoading(false)
-    if (error) {
-      setError(error.message)
-    } else {
-      setError("Verification link resent! Check your inbox.")
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      })
+      if (error) throw error
+      setError('Verification link sent! Please check your inbox AND spam folder. It may take a minute to arrive.')
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend link')
+    } finally {
+      setIsLoading(false)
     }
   }
 
