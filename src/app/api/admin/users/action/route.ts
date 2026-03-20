@@ -2,8 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 
-// Initialize with service role for admin privileges
-const supabaseAdmin = createClient(
+export const dynamic = 'force-dynamic';
+
+// Helper to initialize with service role only at runtime
+const getAdminClient = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -41,10 +43,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
     }
 
-    // 4. Perform Action
+    // 4. Perform Action using Admin Client (initialized at runtime)
+    const supabaseAdmin = getAdminClient();
+
     if (action === 'delete') {
-      // Delete from auth.users (this also triggers cascading deletes if configured, 
-      // otherwise we delete from public.users first)
+      // Delete from auth.users
       const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (error) throw error;
 

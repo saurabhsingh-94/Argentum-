@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Initialize with service role for admin privileges
 const getAdminClient = () => createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
