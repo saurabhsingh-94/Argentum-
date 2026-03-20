@@ -1,15 +1,34 @@
 import { createClient } from '@/lib/supabase/server';
+import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => ({}));
+    const { subject, content, token: bodyToken } = body;
+
+    // 1. Diagnostics: Log headers and cookies for debugging
+    console.log(`[API] Broadcast Update: ${subject}`);
+    console.log(`[API] Headers:`, Object.fromEntries(request.headers.entries()));
+    const cookieHeader = request.headers.get('cookie');
+    console.log(`[API] Cookies present:`, !!cookieHeader);
+
+    // 2. CSRF & Auth Check
+    const tokenFromHeader = request.headers.get('x-csrf-token');
+    const token = bodyToken || tokenFromHeader;
+
+    if (!token && process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'CSRF token missing' }, { status: 403 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // 1. Admin check
+    // Admin check
     if (!user) {
+      console.warn(`[API] Unauthorized access attempt to broadcast-update`);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -20,31 +39,43 @@ export async function POST(request: Request) {
       .single() as { data: any, error: any };
 
     // Ensure only admins can broadcast
-    if (!profile || profile.role !== 'admin') {
-      const adminIds = (process.env.ADMIN_USER_IDS || '').split(',');
-      if (!adminIds.includes(user.id)) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+    const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(id => id.trim());
+    const isAdmin = (profile && profile.role === 'admin') || adminIds.includes(user.id);
+
+    if (!isAdmin) {
+      console.warn(`[API] Forbidden access attempt by ${user.email}`);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { subject, content } = await request.json();
+    // 3. CSRF Validation Logic
+    const secret = process.env.CSRF_SECRET!;
+    const today = new Date().toISOString().split('T')[0];
+    const expectedToken = createHmac('sha256', secret)
+      .update(`${user.id}:${today}`)
+      .digest('hex');
+
+    if (token && token !== expectedToken) {
+       console.error(`[API] CSRF mismatch for user ${user.id}`);
+       if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json({ error: 'Invalid security token' }, { status: 403 });
+       }
+    }
 
     if (!subject || !content) {
       return NextResponse.json({ error: 'Missing subject or content' }, { status: 400 });
     }
 
-    // 2. Dynamic import Resend inside the handler to prevent build-time evaluation
+    // 4. Initialize Resend inside the handler to prevent build-time evaluation
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
        console.error('RESEND_API_KEY is missing');
        return NextResponse.json({ error: 'Resend API key not configured' }, { status: 500 });
     }
 
-    // Use dynamic import to completely hide Resend from static analysis
     const { Resend } = await import('resend');
     const resend = new Resend(apiKey);
 
-    // 3. Fetch all users to send email to
+    // 5. Fetch all users to send email to
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('email')
@@ -58,7 +89,7 @@ export async function POST(request: Request) {
 
     console.log(`Broadcasting update to ${users.length} users: [${subject}]`);
 
-    // 4. Send emails via Resend
+    // 6. Send emails via Resend
     const sender = process.env.SENDER_EMAIL || 'argentum.auth@gmail.com';
     
     const emails = (users as any[]).map(u => ({

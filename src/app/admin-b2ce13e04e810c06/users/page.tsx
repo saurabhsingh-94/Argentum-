@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
 import { Database } from '@/types/database'
 import { UserWithAdminFields } from '@/types/admin'
+import { apiClient } from '@/lib/api-client'
 
 const ADMIN_SEGMENT = 'b2ce13e04e810c06';
 
@@ -70,14 +71,11 @@ export default function UsersManagement() {
       const { data: { user: adminUser } } = await supabase.auth.getUser()
       
       if (action === 'delete') {
-        const response = await fetch('/api/admin/users/action', {
+        const result = await apiClient('/api/admin/users/action', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', userId, token: csrfToken })
+          token: csrfToken,
+          body: JSON.stringify({ action: 'delete', userId })
         })
-
-        const result = await response.json()
-        if (!response.ok) throw new Error(result.error || 'Failed to delete user')
         
         alert('User identity destroyed.')
       } else {

@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useCsrfToken } from '@/hooks/useCsrfToken'
+import { apiClient } from '@/lib/api-client'
 
 export default function AdminSettings() {
   const [saving, setSaving] = useState(false)
@@ -21,8 +22,7 @@ export default function AdminSettings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch('/api/admin/settings')
-        const data = await res.json()
+        const data = await apiClient('/api/admin/settings')
         setSettings(data)
       } catch (e) {
         console.error('Failed to fetch settings')
@@ -40,14 +40,11 @@ export default function AdminSettings() {
     setSaving(true)
     
     try {
-      const res = await fetch('/api/admin/settings', {
+      await apiClient('/api/admin/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, value: newValue, token: csrfToken })
+        token: csrfToken,
+        body: JSON.stringify({ key, value: newValue })
       })
-      
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Failed to update setting')
       
       setSettings((prev: any) => ({ ...prev, [key]: newValue }))
     } catch (e: any) {
