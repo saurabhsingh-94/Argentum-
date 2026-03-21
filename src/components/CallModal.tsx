@@ -50,12 +50,19 @@ export default function CallModal({
     const initCall = async () => {
       // 1. Setup local media
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Your browser blocks media access on this connection. Ensure you are using HTTPS or localhost.")
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: startVideo || (initialIncomingCall?.type === 'video') })
         localStream.current = stream
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to get local media', err)
-        alert('Could not access microphone/camera.')
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          alert('Microphone/Camera access was denied. Please click the lock icon in your URL bar to allow permissions and try again.')
+        } else {
+          alert(`Could not access microphone/camera: ${err.message || 'Unknown error. Check device connections.'}`)
+        }
         onClose()
         return
       }

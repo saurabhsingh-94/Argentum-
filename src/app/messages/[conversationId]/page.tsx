@@ -532,6 +532,9 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
   const startRecording = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Your browser blocks microphone access on this connection. Ensure you are using HTTPS or localhost.")
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
@@ -554,9 +557,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration(prev => prev + 1)
       }, 1000)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accessing microphone:', err)
-      alert("Microphone access denied or unavailable. Please check site permissions.")
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        alert('Microphone access was denied. Please click the lock icon in your URL bar to allow permissions and try again.')
+      } else {
+        alert(`Microphone access unavailable: ${err.message || 'Unknown error. Check device connections.'}`)
+      }
     }
   }
 

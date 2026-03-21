@@ -27,6 +27,9 @@ export default function CameraCapture({ isOpen, onClose, onCapture }: CameraCapt
 
   const startCamera = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Browser blocks camera on this connection. Use HTTPS/localhost.")
+      }
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user' },
         audio: false 
@@ -36,9 +39,13 @@ export default function CameraCapture({ isOpen, onClose, onCapture }: CameraCapt
         videoRef.current.srcObject = mediaStream
       }
       setError(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Camera error:", err)
-      setError("Unable to access camera. Please check permissions.")
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError("Camera access denied. Click the 🔒 lock icon in your URL bar to allow.")
+      } else {
+        setError(err.message || "Unable to access camera. Please check connections.")
+      }
     }
   }
 
