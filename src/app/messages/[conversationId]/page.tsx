@@ -47,7 +47,11 @@ import {
   Camera,
   Image as ImageIcon,
   File as FileIcon,
-  ChevronUp
+  ChevronUp,
+  Mic,
+  Square,
+  Phone,
+  Video
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatLastSeen } from '@/lib/utils/time'
@@ -58,6 +62,7 @@ import CameraCapture from '@/components/CameraCapture'
 import Lightbox from '@/components/Lightbox'
 import KeyBackupModal from '@/components/KeyBackupModal'
 import KeyRecoveryModal from '@/components/KeyRecoveryModal'
+import CallModal from '@/components/CallModal'
 import { ChatUser, MessageWithReactions, ConversationWithParticipants, MessageReaction } from '@/types/chat'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
@@ -101,6 +106,24 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   
+  // Voice Recording State
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingDuration, setRecordingDuration] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Presence State
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [presenceChannel, setPresenceChannel] = useState<any>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // WebRTC State
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false)
+  const [incomingCall, setIncomingCall] = useState<{ type: 'audio'|'video', offer: RTCSessionDescriptionInit } | null>(null)
+  const [startVideo, setStartVideo] = useState(false)
+  const webrtcChannelRef = useRef<any>(null)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -189,14 +212,39 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
         await fetchMessages(conv, user.id)
         
-        // @ts-ignore
-        await supabase
-          .from('messages')
+        const sendReadReceipts = localStorage.getItem('ag_read_receipts') !== 'false'
+        if (sendReadReceipts) {
           // @ts-ignore
-          .update({ read_at: new Date().toISOString() })
-          .eq('conversation_id', conversationId)
-          .neq('sender_id', user.id)
-          .is('read_at', null)
+          await supabase
+            .from('messages')
+            // @ts-ignore
+            .update({ read_at: new Date().toISOString() })
+            .eq('conversation_id', conversationId)
+            .neq('sender_id', user.id)
+            .is('read_at', null)
+        }
+
+        const typingChan = supabase.channel(`typing:${conversationId}`)
+        typingChan
+          .on('presence', { event: 'sync' }, () => {
+            const state = typingChan.presenceState()
+            const typingIds = Object.values(state).flat().filter((p: any) => p.typing).map((p: any) => p.user_id)
+            setTypingUsers(typingIds)
+          })
+          .subscribe()
+        setPresenceChannel(typingChan)
+
+        // WEBRTC SIGNALING
+        const webrtcChan = supabase.channel(`webrtc:${conversationId}`)
+        webrtcChan.on('broadcast', { event: 'webrtc-signal' }, ({ payload }: any) => {
+          if (payload.sender === user.id) return
+          if (payload.type === 'offer') {
+            setIncomingCall({ type: payload.callType, offer: payload.offer })
+            setStartVideo(payload.callType === 'video')
+            setIsCallModalOpen(true)
+          }
+        }).subscribe()
+        webrtcChannelRef.current = webrtcChan
 
         // @ts-ignore
         const channel = supabase
@@ -215,7 +263,12 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 }
                 return [...prev, processed]
               })
-              setTimeout(() => scrollToBottom(), 50)
+              setTimeout(() => {
+                  scrollToBottom()
+                  if (payload.new.sender_id !== user.id && localStorage.getItem('ag_read_receipts') !== 'false') {
+                      supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id).then()
+                  }
+              }, 50)
             }
           )
           // @ts-ignore
@@ -297,9 +350,14 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
       setBgContextMenu(null)
     }
     document.addEventListener('click', handleClickOutside)
+    
+    // We can't access typingChan directly here easily without refs, 
+    // but React handles channel cleanup or we can just let it exist for session length.
     return () => {
         document.removeEventListener('click', handleClickOutside)
         clearInterval(interval)
+        if (presenceChannel) presenceChannel.unsubscribe()
+        if (webrtcChannelRef.current) webrtcChannelRef.current.unsubscribe()
     }
   }, [conversationId])
 
@@ -386,8 +444,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         })
 
       if (error) throw error
+      
       setNewMessage('')
       setReplyTo(null)
+      
+      if (presenceChannel && currentUser) {
+          presenceChannel.track({ user_id: currentUser.id, typing: false })
+      }
 
       // Prompt for backup after first message if not set up
       const hasPrompted = localStorage.getItem('ag_backup_prompted') === 'true'
@@ -404,7 +467,21 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
     }
   }
 
-  const handleFileUpload = async (file: File | Blob, type: 'image' | 'file') => {
+  const handleTyping = (text: string) => {
+    setNewMessage(text)
+    if (localStorage.getItem('ag_show_typing') === 'false') return
+    
+    if (presenceChannel && currentUser) {
+      presenceChannel.track({ user_id: currentUser.id, typing: true })
+      
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => {
+        presenceChannel.track({ user_id: currentUser.id, typing: false })
+      }, 3000)
+    }
+  }
+
+  const handleFileUpload = async (file: File | Blob, type: 'image' | 'file' | 'voice') => {
       if (!file) return
       
       setUploading(true)
@@ -412,7 +489,10 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
       try {
           const isBlob = file instanceof Blob && !(file instanceof File)
-          const fileName = isBlob ? `camera_${Date.now()}.jpg` : (file as File).name
+          let fileName = isBlob ? `file_${Date.now()}.bin` : (file as File).name
+          if (type === 'image' && isBlob) fileName = `camera_${Date.now()}.jpg`
+          if (type === 'voice') fileName = `voice_${Date.now()}.webm`
+          
           const fileExt = fileName.split('.').pop()
           const storagePath = `${conversationId}/${Math.random()}.${fileExt}`
 
@@ -431,7 +511,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
           await handleSendMessage(
             undefined, 
-            type === 'image' ? `[IMAGE]:${publicUrl}` : `[FILE]:${fileName}`,
+            type === 'image' ? `[IMAGE]:${publicUrl}` : type === 'voice' ? `[VOICE]:${publicUrl}` : `[FILE]:${fileName}`,
             {
                 url: publicUrl,
                 type: type,
@@ -448,6 +528,49 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           setUploading(false)
           setUploadProgress(0)
       }
+  }
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' })
+        handleFileUpload(file, 'voice')
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingDuration(0)
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1)
+      }, 1000)
+    } catch (err) {
+      console.error('Error accessing microphone:', err)
+      alert("Microphone access denied or unavailable. Please check site permissions.")
+    }
+  }
+
+  const stopRecording = (cancel = false) => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (cancel) {
+        mediaRecorderRef.current.onstop = () => {
+          mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop())
+        }
+      }
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current)
+    }
   }
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -613,6 +736,19 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           </div>
 
           <div className="flex items-center gap-2">
+             <button 
+                onClick={() => { setStartVideo(false); setIncomingCall(null); setIsCallModalOpen(true) }}
+                className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all shadow-glow"
+             >
+                <Phone size={20} />
+             </button>
+             <button 
+                onClick={() => { setStartVideo(true); setIncomingCall(null); setIsCallModalOpen(true) }}
+                className="p-2 hover:bg-white/5 rounded-xl text-gray-400 hover:text-white transition-all shadow-glow mr-2"
+             >
+                <Video size={20} />
+             </button>
+             
              <AnimatePresence>
                 {showSearch && (
                   <motion.div
@@ -678,6 +814,14 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
 
         {/* Messages List */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+          
+          <div className="flex justify-center mb-6">
+             <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600/90 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl flex items-center gap-2 max-w-[280px] md:max-w-sm text-center leading-relaxed">
+               <Lock size={12} className="shrink-0" />
+               <span>Messages and calls are end-to-end encrypted. No one outside of this chat, not even Argentum, can read or listen to them.</span>
+             </div>
+          </div>
+
           {filteredMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 opacity-40">
               <div className="w-16 h-16 rounded-[2rem] border border-white/10 flex items-center justify-center text-gray-600">
@@ -741,6 +885,13 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                               />
                               {msg.decryptedContent && !msg.decryptedContent.startsWith('[IMAGE]:') && (
                                   <div className="px-1 py-1">{msg.decryptedContent}</div>
+                              )}
+                          </div>
+                      ) : msg.attachment_url && msg.attachment_type === 'voice' ? (
+                          <div className={`flex flex-col gap-2 min-w-[200px] ${isOwn ? 'text-black' : 'text-white'}`}>
+                              <audio controls src={msg.attachment_url} className={`h-10 w-[240px] rounded-full max-w-full ${isOwn ? 'opacity-80' : 'opacity-100'}`} />
+                              {msg.decryptedContent && !msg.decryptedContent.startsWith('[VOICE]:') && (
+                                  <div className="px-1 py-1 text-sm">{msg.decryptedContent}</div>
                               )}
                           </div>
                       ) : msg.attachment_url && msg.attachment_type === 'file' ? (
@@ -840,6 +991,21 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
               )
             })
           )}
+          
+          {typingUsers.includes(otherParticipant.id) && (
+              <motion.div 
+               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+               className="flex items-center gap-2 mb-2 px-1"
+              >
+                  <div className="flex gap-1.5 items-center px-4 py-2 bg-white/5 rounded-2xl rounded-bl-none border border-white/10 w-fit">
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-silver animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="text-[10px] ml-2 font-bold text-silver uppercase tracking-widest">{nickname || otherParticipant.display_name || otherParticipant.username} is typing</span>
+                  </div>
+              </motion.div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -953,12 +1119,19 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                           {uploading ? <Loader2 size={12} className="animate-spin" /> : 'Send'}
                       </button>
                   </div>
+                ) : isRecording ? (
+                  <div className="w-full h-full bg-[#1a1a1a] border border-red-500/40 rounded-2xl px-4 py-4 flex items-center justify-between animate-pulse">
+                    <div className="flex items-center gap-3">
+                       <span className="w-3 h-3 rounded-full bg-red-500 animate-bounce" />
+                       <span className="text-sm font-mono text-red-400 font-bold">Recording... {Math.floor(recordingDuration/60)}:{(recordingDuration%60).toString().padStart(2, '0')}</span>
+                    </div>
+                  </div>
                 ) : (
                   <form onSubmit={handleSendMessage} className="w-full h-full">
                     <input
                       type="text"
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={(e) => handleTyping(e.target.value)}
                       placeholder="Send a secure message..."
                       className="w-full h-full bg-[#1a1a1a] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:border-silver/40 focus:glow-silver transition-all"
                     />
@@ -966,14 +1139,35 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                 )}
               </div>
 
-              <button
-                type="button" // Change to button since form logic is nested or handled manually
-                onClick={() => handleSendMessage()}
-                disabled={(!newMessage.trim() && !selectedFile) || sending}
-                className="w-14 h-14 rounded-full bg-[#22c55e] text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-glow-green"
-              >
-                {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-              </button>
+              {!newMessage.trim() && !selectedFile && !isRecording ? (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                >
+                  <Mic size={20} />
+                </button>
+              ) : isRecording ? (
+                <div className="flex items-center gap-2">
+                   <button type="button" onClick={() => stopRecording(true)} className="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center hover:scale-110 transition-all border border-red-500/20"><Trash size={16}/></button>
+                   <button
+                    type="button"
+                    onClick={() => stopRecording(false)}
+                    className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                  >
+                    <Send size={18} fill="currentColor" className="-ml-1" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button" // Change to button since form logic is nested or handled manually
+                  onClick={() => handleSendMessage()}
+                  disabled={(!newMessage.trim() && !selectedFile) || sending}
+                  className="w-14 h-14 rounded-full bg-[#22c55e] text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-glow-green"
+                >
+                  {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                </button>
+              )}
             </div>
             {uploading && (
                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
@@ -1153,6 +1347,16 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onCapture={(blob) => handleFileUpload(blob, 'image')}
+      />
+
+      <CallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        conversationId={conversationId}
+        currentUser={currentUser}
+        otherParticipant={otherParticipant}
+        initialIncomingCall={incomingCall}
+        startVideo={startVideo}
       />
 
       <style jsx global>{`

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
-type Theme = 'light' | 'dark' | 'glass'
+type Theme = 'light' | 'dark' | 'glass' | 'system'
 
 interface ThemeContextType {
   theme: Theme
@@ -13,33 +13,56 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark')
+  const [theme, setThemeState] = useState<Theme>('system')
 
-  const applyTheme = (newTheme: Theme) => {
-    document.documentElement.setAttribute('data-theme-changing', 'true')
-    
-    document.documentElement.classList.remove('light', 'dark', 'glass')
-    document.documentElement.classList.add(newTheme)
+  const applyTheme = (newTheme: Theme, isPassiveSync = false) => {
+    const targetClass = newTheme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : newTheme;
+
+    const updateDOM = () => {
+      document.documentElement.classList.remove('light', 'dark', 'glass')
+      document.documentElement.classList.add(targetClass)
+      // Optional fallback for legacy CSS animations
+      document.documentElement.setAttribute('data-theme-changing', 'true')
+      setTimeout(() => document.documentElement.removeAttribute('data-theme-changing'), 500)
+    }
+
+    if (!document.startViewTransition || isPassiveSync) {
+      updateDOM()
+    } else {
+      document.startViewTransition(() => {
+        updateDOM()
+      })
+    }
+
     setThemeState(newTheme)
-    localStorage.setItem('ag_theme', newTheme)
-
-    setTimeout(() => {
-      document.documentElement.removeAttribute('data-theme-changing')
-    }, 500)
+    if (!isPassiveSync) {
+      localStorage.setItem('ag_theme', newTheme)
+    }
   }
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('ag_theme') as Theme
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const initialTheme = savedTheme || systemTheme
+    const savedTheme = (localStorage.getItem('ag_theme') as Theme) || 'system'
+    applyTheme(savedTheme, true)
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (localStorage.getItem('ag_theme') === 'system') {
+        applyTheme('system', true)
+      }
+    }
     
-    applyTheme(initialTheme)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [])
 
   const toggleTheme = () => {
     const nextTheme: Theme = 
       theme === 'light' ? 'dark' : 
-      theme === 'dark' ? 'glass' : 'light'
+      theme === 'dark' ? 'glass' : 
+      theme === 'glass' ? 'system' : 'light'
+    
     applyTheme(nextTheme)
   }
 

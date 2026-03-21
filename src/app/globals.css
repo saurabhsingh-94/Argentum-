@@ -125,13 +125,36 @@
 /* 6. Premium Theme Transitions */
 [data-theme-changing] body {
   animation: theme-switch-3d 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
 }
 
 @keyframes theme-switch-3d {
   0% { filter: brightness(1) blur(0px); transform: scale(1); }
   40% { filter: brightness(1.2) blur(2px); transform: scale(0.995); }
   100% { filter: brightness(1) blur(0px); transform: scale(1); }
+}
+
+/* View Transitions API Native Animations */
+::view-transition-group(root) {
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: theme-fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: theme-fade-in;
+}
+
+@keyframes theme-fade-out {
+  from { opacity: 1; transform: scale(1); filter: blur(0px) brightness(1); }
+  to { opacity: 0; transform: scale(0.95); filter: blur(10px) brightness(0.8); }
+}
+
+@keyframes theme-fade-in {
+  from { opacity: 0; transform: scale(1.05); filter: blur(10px) brightness(1.2); }
+  to { opacity: 1; transform: scale(1); filter: blur(0px) brightness(1); }
 }
 
 body {

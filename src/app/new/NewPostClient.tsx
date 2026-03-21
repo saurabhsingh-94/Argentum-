@@ -45,8 +45,10 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
       const parts = url.split('github.com/');
       if (parts.length < 2) throw new Error('Invalid GitHub URL structure');
       
-      const repoPath = parts[1].split('?')[0].split('#')[0];
-      if (!repoPath || !repoPath.includes('/')) throw new Error('Specify a full repository (e.g., user/repo)');
+      const pathSegments = parts[1].split('?')[0].split('#')[0].split('/').filter(Boolean);
+      if (pathSegments.length < 2) throw new Error('Specify a full repository (e.g., user/repo)');
+      
+      const repoPath = `${pathSegments[0]}/${pathSegments[1]}`;
 
       const response = await fetch(`https://api.github.com/repos/${repoPath}`)
       if (!response.ok) throw new Error('Repository not found')
@@ -108,16 +110,15 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
         if (isNewColumnError) {
           console.warn('First insert failed (likely schema cache), attempting resilient fallback', error)
           
-          // Build fallback insert object dynamically to be safe
+          // Build a safe, purely essential fallback object for insertion, completely ignoring optional columns 
+          // that could trigger `PGRST204` schema cache misses across various platforms and branches
           const fallbackObj: any = {
             user_id: initialUser.id,
             title: postType === 'speak' ? `Broadcast: ${title || 'Announcement'}` : title,
             content,
             content_hash: hash,
-            category: 'Other',
             status,
-            tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-            verification_status: 'unverified'
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean)
           }
 
           const fallbackData = await supabase

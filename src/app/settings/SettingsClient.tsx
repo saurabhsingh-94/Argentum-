@@ -53,13 +53,32 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
   const [is2FAModalOpen, setIs2FAModalOpen] = useState(false)
   const [mfaFactors, setMfaFactors] = useState<any[]>([])
   const [isMfaLoading, setIsMfaLoading] = useState(false)
+  
+  const [showTyping, setShowTyping] = useState(true)
+  const [showReadReceipts, setShowReadReceipts] = useState(true)
+
   useEffect(() => {
     const savedCompact = typeof window !== 'undefined' ? localStorage.getItem('appearance_compact') === 'true' : false
     setCompactMode(savedCompact)
     setDisappearingMessages(typeof window !== 'undefined' ? (localStorage.getItem('ag_disappearing_messages') || 'Off') : 'Off')
     
+    setShowTyping(typeof window !== 'undefined' ? localStorage.getItem('ag_show_typing') !== 'false' : true)
+    setShowReadReceipts(typeof window !== 'undefined' ? localStorage.getItem('ag_read_receipts') !== 'false' : true)
+    
     fetchMfaFactors()
   }, [])
+
+  const toggleTyping = () => {
+    const next = !showTyping
+    setShowTyping(next)
+    localStorage.setItem('ag_show_typing', String(next))
+  }
+
+  const toggleReadReceipts = () => {
+    const next = !showReadReceipts
+    setShowReadReceipts(next)
+    localStorage.setItem('ag_read_receipts', String(next))
+  }
 
   const fetchMfaFactors = async () => {
     setIsMfaLoading(true)
@@ -376,15 +395,21 @@ export default function SettingsClient({ initialUser, initialProfile }: Settings
                          <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4">Messaging & Presence</p>
                          <div className="space-y-6">
                             <div className="flex items-center justify-between">
-                               <p className="text-sm">Show online status</p>
-                               <button className="w-12 h-6 rounded-full bg-green-500 relative shadow-[0_0_10px_rgba(34,197,94,0.3)]">
-                                  <div className="absolute top-1 left-7 w-4 h-4 bg-white rounded-full transition-all" />
+                               <p className="text-sm">Send typing indicators</p>
+                               <button 
+                                 onClick={toggleTyping}
+                                 className={`w-12 h-6 rounded-full relative transition-all ${showTyping ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-card border border-border'}`}
+                               >
+                                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showTyping ? 'left-7' : 'left-1 bg-text-muted'}`} />
                                </button>
                             </div>
                             <div className="flex items-center justify-between">
-                               <p className="text-sm">Show read receipts</p>
-                               <button className="w-12 h-6 rounded-full bg-green-500 relative shadow-[0_0_10px_rgba(34,197,94,0.3)]">
-                                  <div className="absolute top-1 left-7 w-4 h-4 bg-white rounded-full transition-all" />
+                               <p className="text-sm">Send read receipts</p>
+                               <button 
+                                 onClick={toggleReadReceipts}
+                                 className={`w-12 h-6 rounded-full relative transition-all ${showReadReceipts ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-card border border-border'}`}
+                               >
+                                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showReadReceipts ? 'left-7' : 'left-1 bg-text-muted'}`} />
                                </button>
                             </div>
                          </div>
