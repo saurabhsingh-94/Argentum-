@@ -107,10 +107,10 @@
 
 .glass {
   /* Liquid Silver - 3D Glass Overhaul */
-  --background: #020203;
+  --background: #040406;
   --foreground: #FFFFFF;
   --card: rgba(255, 255, 255, 0.04);
-  --card-overlay: rgba(255, 255, 255, 0.06);
+  --card-overlay: rgba(20, 20, 30, 0.4);
   --border: rgba(255, 255, 255, 0.2);
   --text-primary: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.8);
@@ -120,6 +120,17 @@
   --bg-surface: rgba(255, 255, 255, 0.03);
   
   --glass-blur: blur(40px) saturate(180%);
+}
+
+.glass body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(100, 150, 255, 0.08), transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(200, 200, 255, 0.05), transparent 40%);
+  pointer-events: none;
+  z-index: -2;
 }
 
 /* 6. Premium Theme Transitions */
@@ -135,26 +146,28 @@
 
 /* View Transitions API Native Animations */
 ::view-transition-group(root) {
-  animation-duration: 0.7s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 ::view-transition-old(root) {
-  animation-name: theme-fade-out;
+  animation: 0.8s cubic-bezier(0.76, 0, 0.24, 1) both theme-fade-out;
+  mix-blend-mode: normal;
 }
 
 ::view-transition-new(root) {
-  animation-name: theme-fade-in;
+  animation: 0.8s cubic-bezier(0.76, 0, 0.24, 1) both theme-fade-in;
+  mix-blend-mode: normal;
 }
 
 @keyframes theme-fade-out {
-  from { opacity: 1; transform: scale(1); filter: blur(0px) brightness(1); }
-  to { opacity: 0; transform: scale(0.95); filter: blur(10px) brightness(0.8); }
+  from { opacity: 1; transform: scale(1); filter: blur(0px); }
+  to { opacity: 0; transform: scale(0.92); filter: blur(20px); }
 }
 
 @keyframes theme-fade-in {
-  from { opacity: 0; transform: scale(1.05); filter: blur(10px) brightness(1.2); }
-  to { opacity: 1; transform: scale(1); filter: blur(0px) brightness(1); }
+  from { opacity: 0; transform: scale(1.08); filter: blur(20px); outline: 2px solid white; }
+  to { opacity: 1; transform: scale(1); filter: blur(0px); outline: none; }
 }
 
 body {

@@ -193,14 +193,18 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
                   <p className="text-[11px] text-muted uppercase font-black tracking-widest">Use your authenticator app</p>
                 </div>
 
-                <div className="p-4 bg-white rounded-3xl border-4 border-primary-silver/20 shadow-2xl relative group">
+                <div className="p-4 bg-white rounded-3xl border-4 border-primary-silver/20 shadow-2xl relative group flex items-center justify-center">
                   {qrCode ? (
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: qrCode }} 
-                      className="w-48 h-48 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
-                    />
+                    qrCode.startsWith('data:') ? (
+                      <img src={qrCode} alt="2FA QR Code" className="w-48 h-48 object-contain" />
+                    ) : (
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: qrCode }} 
+                        className="w-48 h-48 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full text-black"
+                      />
+                    )
                   ) : (
-                    <div className="w-48 h-48 flex items-center justify-center bg-gray-100 animate-pulse">
+                    <div className="w-48 h-48 flex items-center justify-center bg-gray-100 animate-pulse rounded-2xl">
                       <QrCode className="text-gray-300" size={40} />
                     </div>
                   )}
