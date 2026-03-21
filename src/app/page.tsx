@@ -99,7 +99,7 @@ export default async function Home() {
                   <Link href="/auth/login" className="px-12 py-5 silver-metallic rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-premium">
                      Get Your Invite
                   </Link>
-                  <Link href="https://github.com" className="flex items-center gap-3 px-12 py-5 hero-sub-button rounded-2xl font-black uppercase tracking-widest text-[11px]">
+                  <Link href="https://github.com/saurabhsingh-94" className="flex items-center gap-3 px-12 py-5 hero-sub-button rounded-2xl font-black uppercase tracking-widest text-[11px]">
                      <Github size={18} /> Import from GitHub
                   </Link>
                </div>
