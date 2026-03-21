@@ -38,8 +38,15 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
     
     setIsFetchingGithub(true)
     try {
-      const repoPath = githubUrl.split('github.com/')[1].split('?')[0].split('#')[0]
-      if (!repoPath) throw new Error('Invalid GitHub URL')
+      // Cleaner URL parsing
+      let url = githubUrl.trim();
+      if (url.endsWith('/')) url = url.slice(0, -1);
+      
+      const parts = url.split('github.com/');
+      if (parts.length < 2) throw new Error('Invalid GitHub URL structure');
+      
+      const repoPath = parts[1].split('?')[0].split('#')[0];
+      if (!repoPath || !repoPath.includes('/')) throw new Error('Specify a full repository (e.g., user/repo)');
 
       const response = await fetch(`https://api.github.com/repos/${repoPath}`)
       if (!response.ok) throw new Error('Repository not found')
@@ -89,21 +96,33 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
         .single()
 
       if (error) {
-        // Fallback for missing category in DB enum or missing is_priority column
-        if (error.code === '23514' || error.code === '42703' || (error.message && (error.message.includes('category') || error.message.includes('is_priority')))) {
-          console.warn('First insert failed, attempting resilient fallback', error)
+        // Fallback for missing new columns (schema cache issues)
+        const errorMessage = error.message || "";
+        const isNewColumnError = 
+          error.code === '42703' || // Column does not exist
+          error.code === 'PGRST204' || // PostgREST schema cache error
+          errorMessage.includes('is_priority') || 
+          errorMessage.includes('is_collab') ||
+          errorMessage.includes('category');
+
+        if (isNewColumnError) {
+          console.warn('First insert failed (likely schema cache), attempting resilient fallback', error)
+          
+          // Build fallback insert object dynamically to be safe
+          const fallbackObj: any = {
+            user_id: initialUser.id,
+            title: postType === 'speak' ? `Broadcast: ${title || 'Announcement'}` : title,
+            content,
+            content_hash: hash,
+            category: 'Other',
+            status,
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+            verification_status: 'unverified'
+          }
+
           const fallbackData = await supabase
             .from('posts')
-            .insert({
-              user_id: initialUser.id,
-              title: postType === 'speak' ? `Broadcast: ${title || 'Announcement'}` : title,
-              content,
-              content_hash: hash,
-              category: 'Other', // Fallback category
-              status,
-              tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-              verification_status: 'unverified'
-            })
+            .insert(fallbackObj)
             .select()
             .single()
           
