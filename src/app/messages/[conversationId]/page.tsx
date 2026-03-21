@@ -50,6 +50,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import Link from 'next/link'
+import { formatLastSeen } from '@/lib/utils/time'
 import { decryptMessage, encryptMessage, getStoredSecretKey, initializeEncryption, resetKeys } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
 import AccountSwitcher from '@/components/AccountSwitcher'
@@ -605,7 +606,7 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                   </span>
                 </h2>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                    {otherParticipant.is_online ? 'Online now' : `Last seen ${new Date(otherParticipant.last_seen || Date.now()).toLocaleTimeString()}`}
+                    {formatLastSeen(!!otherParticipant.is_online, otherParticipant.last_seen as string | null)}
                 </span>
               </div>
             </div>

@@ -7,6 +7,7 @@ import { MessageCircle, Search, Loader2, Plus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { getStoredSecretKey, initializeEncryption, resetKeys } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
+import { formatRelativeTime } from '@/lib/utils/time'
 import AccountSwitcher from '@/components/AccountSwitcher'
 import { Settings, Users, ShieldAlert, Key as KeyIcon } from 'lucide-react'
 import KeyBackupModal from '@/components/KeyBackupModal'
@@ -246,8 +247,8 @@ export default function MessagesClient({ initialUser, initialProfile }: Messages
                         {conv.otherParticipant.display_name || `@${conv.otherParticipant.username}`}
                       </span>
                       {conv.lastMessageTime && (
-                        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
-                          {conv.lastMessageTime.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">
+                          {formatRelativeTime(conv.lastMessageTime)}
                         </span>
                       )}
                     </div>
