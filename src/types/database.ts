@@ -482,21 +482,24 @@ export interface Database {
         Row: {
           id: string
           user_id: string
-          subscription: string
+          endpoint: string
+          subscription: Json
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          subscription: string
+          endpoint: string
+          subscription: Json
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          subscription?: string
+          endpoint?: string
+          subscription?: Json
           created_at?: string
           updated_at?: string
         }
