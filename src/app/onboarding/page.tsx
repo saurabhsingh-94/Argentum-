@@ -50,8 +50,8 @@ export default function Onboarding() {
       setUser(user)
       
       // Auto-fill from GitHub/Google if available
-      setDisplayName(user.user_metadata.full_name || user.user_metadata.name || '')
-      const rawUsername = user.user_metadata.user_name || user.user_metadata.preferred_username || ''
+      setDisplayName(user.user_metadata?.full_name || user.user_metadata?.name || '')
+      const rawUsername = user.user_metadata?.user_name || user.user_metadata?.preferred_username || ''
       if (rawUsername) {
         setUsername(rawUsername.toLowerCase().replace(/[^a-z0-9_]/g, ''))
       }
@@ -112,11 +112,11 @@ export default function Onboarding() {
         display_name: displayName,
         bio,
         currently_building: currentlyBuilding,
-        avatar_url: user.user_metadata.avatar_url,
-        github_username: githubUsername || user.user_metadata.user_name,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        github_username: githubUsername || user.user_metadata?.user_name || null,
         instagram_username: instagramUsername || null,
         website_url: websiteUrl || null,
-        skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
+        skills: skills ? skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [],
         is_public: isPublic
         // email: user.email // Removed if it's causing issues, but keeping it if it exists in DB. 
         // Based on my research, email IS in the DB but let's be safe and only send what's needed.
