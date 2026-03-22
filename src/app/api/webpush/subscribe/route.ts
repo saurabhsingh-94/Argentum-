@@ -17,10 +17,12 @@ export async function POST(req: Request) {
     }
 
     // Upsert by endpoint so re-subscribing the same device doesn't create duplicates
-    const { error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any
+    const { error } = await db
       .from('push_subscriptions')
       .upsert(
-        { user_id: user.id, subscription: subscription as any, endpoint: subscription.endpoint },
+        { user_id: user.id, subscription, endpoint: subscription.endpoint },
         { onConflict: 'endpoint' }
       )
 
