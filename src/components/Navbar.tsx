@@ -109,7 +109,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
   return (
     <>
-      <nav className="sticky top-0 z-[100] w-full glass-header">
+      <nav className="sticky top-0 z-[100] w-full bg-background/70 backdrop-blur-2xl border-b border-border/50 supports-[backdrop-filter]:bg-background/40 transition-colors duration-500">
         <div className="mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
           {/* Left Section: Logo */}
           <div className="flex items-center gap-2 shrink-0">
