@@ -39,6 +39,7 @@ export default function PostCard({
   const supabase = createClient() as any
   const [showMenu, setShowMenu] = useState(false)
   const [reactions, setReactions] = useState<PostReaction[]>(post.post_reactions || [])
+  const [commentCount, setCommentCount] = useState<number>(post.comments_count ?? 0)
   const [avatarError, setAvatarError] = useState(false)
 
   useEffect(() => {
