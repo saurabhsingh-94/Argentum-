@@ -55,7 +55,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatLastSeen } from '@/lib/utils/time'
-import { decryptMessage, encryptMessage, getStoredSecretKey, initializeEncryption, resetKeys } from '@/lib/crypto'
+import { decryptMessage, encryptMessage, encryptFile, decryptFile, getStoredSecretKey, initializeEncryption, resetKeys } from '@/lib/crypto'
 import { motion, AnimatePresence } from 'framer-motion'
 import AccountSwitcher from '@/components/AccountSwitcher'
 import CameraCapture from '@/components/CameraCapture'
@@ -67,6 +67,7 @@ import DisappearingMessageSettings from '@/components/DisappearingMessageSetting
 import MessageExpiryIndicator from '@/components/MessageExpiryIndicator'
 import EmojiPicker from '@/components/EmojiPicker'
 import ReactionDisplay, { ReactionGroup } from '@/components/ReactionDisplay'
+import DecryptedMedia from '@/components/DecryptedMedia'
 import { ChatUser, MessageWithReactions, ConversationWithParticipants, MessageReaction } from '@/types/chat'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
@@ -502,11 +503,20 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
           if (type === 'voice') fileName = `voice_${Date.now()}.webm`
           
           const fileExt = fileName.split('.').pop()
-          const storagePath = `${conversationId}/${Math.random()}.${fileExt}`
+          const storagePath = `${conversationId}/${Math.random()}.${fileExt}.enc`
+
+          // Encrypt the file bytes before upload
+          const secretKey = getStoredSecretKey()
+          let uploadBlob: Blob = file
+          if (secretKey && otherParticipant?.public_key) {
+            const arrayBuffer = await file.arrayBuffer()
+            const fileBytes = new Uint8Array(arrayBuffer)
+            uploadBlob = encryptFile(fileBytes, otherParticipant.public_key, secretKey)
+          }
 
           const { error: uploadError } = await supabase.storage
               .from('message-attachments')
-              .upload(storagePath, file, {
+              .upload(storagePath, uploadBlob, {
                   cacheControl: '3600',
                   upsert: false
               })
@@ -906,10 +916,11 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                           </div>
                       ) : msg.attachment_url && msg.attachment_type === 'image' ? (
                           <div className="flex flex-col gap-2">
-                              <img 
-                                src={msg.attachment_url} 
-                                alt="attachment" 
-                                className="rounded-lg max-w-full cursor-zoom-in hover:brightness-110 transition-all border border-white/10 shadow-lg" 
+                              <DecryptedMedia
+                                url={msg.attachment_url}
+                                senderPublicKey={isOwn ? null : otherParticipant.public_key ?? null}
+                                type="image"
+                                className="rounded-lg max-w-full cursor-zoom-in hover:brightness-110 transition-all border border-white/10 shadow-lg"
                                 onClick={() => setLightboxImage(msg.attachment_url || null)}
                               />
                               {msg.decryptedContent && !msg.decryptedContent.startsWith('[IMAGE]:') && (
@@ -918,37 +929,35 @@ export default function ChatPage({ params }: { params: Promise<{ conversationId:
                           </div>
                       ) : msg.attachment_url && msg.attachment_type === 'voice' ? (
                           <div className={`flex flex-col gap-2 min-w-[200px] ${isOwn ? 'text-black' : 'text-white'}`}>
-                              <audio controls src={msg.attachment_url} className={`h-10 w-[240px] rounded-full max-w-full ${isOwn ? 'opacity-80' : 'opacity-100'}`} />
+                              <DecryptedMedia
+                                url={msg.attachment_url}
+                                senderPublicKey={isOwn ? null : otherParticipant.public_key ?? null}
+                                type="voice"
+                                className={`h-10 w-[240px] rounded-full max-w-full ${isOwn ? 'opacity-80' : 'opacity-100'}`}
+                              />
                               {msg.decryptedContent && !msg.decryptedContent.startsWith('[VOICE]:') && (
                                   <div className="px-1 py-1 text-sm">{msg.decryptedContent}</div>
                               )}
                           </div>
                       ) : msg.attachment_url && msg.attachment_type === 'file' ? (
                           <div className="flex flex-col gap-2 min-w-[200px]">
-                              <a 
-                                href={msg.attachment_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all group/file"
-                              >
-                                  <div className="p-2 bg-white/5 rounded-lg border border-white/10 group-hover/file:bg-white/10 transition-colors">
-                                      <FileIcon size={20} className={isOwn ? 'text-black/60' : 'text-blue-400'} />
-                                  </div>
-                                  <div className="flex flex-col flex-1 min-w-0">
-                                      <span className="text-[10px] font-black uppercase opacity-60">Document</span>
-                                      <span className="text-xs font-bold truncate">{msg.attachment_name || 'Generic File'}</span>
-                                      <span className="text-[9px] opacity-40 font-mono">{(msg.attachment_size || 0) / 1024 > 0 ? ((msg.attachment_size || 0) / 1024).toFixed(1) : '0'} KB</span>
-                                  </div>
-                              </a>
+                              <DecryptedMedia
+                                url={msg.attachment_url}
+                                senderPublicKey={isOwn ? null : otherParticipant.public_key ?? null}
+                                type="file"
+                                fileName={msg.attachment_name ?? undefined}
+                                className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all"
+                              />
                               {msg.decryptedContent && !msg.decryptedContent.startsWith('[FILE]:') && (
                                   <div className="px-1">{msg.decryptedContent}</div>
                               )}
                           </div>
                       ) : isImage ? (
-                          <img 
-                            src={imageUrl!} 
-                            alt="attachment" 
-                            className="rounded-lg max-w-full cursor-pointer hover:brightness-110 transition-all" 
+                          <DecryptedMedia
+                            url={imageUrl!}
+                            senderPublicKey={isOwn ? null : otherParticipant.public_key ?? null}
+                            type="image"
+                            className="rounded-lg max-w-full cursor-pointer hover:brightness-110 transition-all"
                             onClick={() => setLightboxImage(imageUrl || null)}
                           />
                       ) : editingId === msg.id ? (

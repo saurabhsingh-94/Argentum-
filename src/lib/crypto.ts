@@ -32,6 +32,44 @@ export const saveSecretKey = (secretKey: string) => {
   localStorage.setItem(PRIVATE_KEY_STORAGE_KEY, secretKey)
 }
 
+/**
+ * Encrypts raw binary data (file/image/voice) using NaCl box.
+ * Returns an encrypted Blob ready for upload.
+ */
+export const encryptFile = (
+  data: Uint8Array,
+  recipientPublicKey: string,
+  senderSecretKey: Uint8Array
+): Blob => {
+  const nonce = nacl.randomBytes(nacl.box.nonceLength)
+  const recipientPublicKeyUint8 = decodeBase64(recipientPublicKey)
+  const encrypted = nacl.box(data, nonce, recipientPublicKeyUint8, senderSecretKey)
+  const combined = new Uint8Array(nonce.length + encrypted.length)
+  combined.set(nonce)
+  combined.set(encrypted, nonce.length)
+  return new Blob([combined], { type: 'application/octet-stream' })
+}
+
+/**
+ * Decrypts an encrypted file blob downloaded from storage.
+ * Returns the original bytes, or null on failure.
+ */
+export const decryptFile = (
+  encryptedData: Uint8Array,
+  senderPublicKey: string,
+  recipientSecretKey: Uint8Array
+): Uint8Array | null => {
+  try {
+    const nonce = encryptedData.slice(0, nacl.box.nonceLength)
+    const message = encryptedData.slice(nacl.box.nonceLength)
+    const senderPublicKeyUint8 = decodeBase64(senderPublicKey)
+    const decrypted = nacl.box.open(message, nonce, senderPublicKeyUint8, recipientSecretKey)
+    return decrypted
+  } catch {
+    return null
+  }
+}
+
 export const encryptMessage = (
   message: string,
   recipientPublicKey: string,
