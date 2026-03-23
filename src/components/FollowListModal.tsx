@@ -50,15 +50,25 @@ export default function FollowListModal({ isOpen, onClose, userId, username, ini
     try {
       let query;
       if (activeTab === 'followers') {
+        // Get users who follow this profile
         query = supabase
           .from('follows')
-          .select('id, follower:follower_id(*)', { count: 'exact' })
+          .select(`
+            id,
+            follower_id,
+            follower:users!follows_follower_id_fkey(id, username, display_name, avatar_url, bio, skills, is_verified)
+          `, { count: 'exact' })
           .eq('following_id', userId)
           .range(start, end)
       } else {
+        // Get users this profile follows
         query = supabase
           .from('follows')
-          .select('id, following:following_id(*)', { count: 'exact' })
+          .select(`
+            id,
+            following_id,
+            following:users!follows_following_id_fkey(id, username, display_name, avatar_url, bio, skills, is_verified)
+          `, { count: 'exact' })
           .eq('follower_id', userId)
           .range(start, end)
       }
