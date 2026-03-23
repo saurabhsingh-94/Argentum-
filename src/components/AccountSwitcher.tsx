@@ -38,7 +38,8 @@ export default function AccountSwitcher({ isOpen, onClose }: { isOpen: boolean, 
         })
         if (error) throw error
         onClose()
-        router.refresh()
+        // Hard reload so server components pick up the new cookie session
+        window.location.href = '/feed'
       } else {
         // Fallback if session is missing
         await supabase.auth.signOut()

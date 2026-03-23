@@ -77,6 +77,15 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
 
     setLoading(true)
     try {
+      // Ensure we have a valid session before submitting (handles AbortError from Web Locks)
+      let userId = initialUser.id
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user?.id) userId = session.user.id
+      } catch {
+        // fall back to initialUser.id
+      }
+
       // 1. Generate SHA-256 hash
       const hash = await hashContent(content)
 
@@ -86,7 +95,7 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
       const { data, error } = await supabase
         .from('posts')
         .insert({
-          user_id: initialUser.id,
+          user_id: userId,
           title: postType === 'speak' ? `Broadcast: ${title || 'Announcement'}` : title,
           content,
           content_hash: hash,
@@ -116,7 +125,7 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
           // Build a safe, purely essential fallback object for insertion, completely ignoring optional columns 
           // that could trigger `PGRST204` schema cache misses across various platforms and branches
           const fallbackObj: any = {
-            user_id: initialUser.id,
+            user_id: userId,
             title: postType === 'speak' ? `Broadcast: ${title || 'Announcement'}` : title,
             content,
             content_hash: hash,
@@ -141,7 +150,7 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
       const { data: existingStreak } = await supabase
         .from('streak_history')
         .select('post_count')
-        .eq('user_id', initialUser.id)
+        .eq('user_id', userId)
         .eq('post_date', postDate)
         .single()
 
@@ -149,13 +158,13 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
         await supabase
           .from('streak_history')
           .update({ post_count: existingStreak.post_count + 1 })
-          .eq('user_id', initialUser.id)
+          .eq('user_id', userId)
           .eq('post_date', postDate)
       } else {
         await supabase
           .from('streak_history')
           .insert({
-            user_id: initialUser.id,
+            user_id: userId,
             post_date: postDate,
             post_count: 1
           })
@@ -165,7 +174,7 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
       const { data: allHistory } = await supabase
         .from('streak_history')
         .select('post_date')
-        .eq('user_id', initialUser.id)
+        .eq('user_id', userId)
         .order('post_date', { ascending: false })
 
       if (allHistory) {
@@ -174,7 +183,7 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
         await supabase
           .from('users')
           .update({ streak_count: current })
-          .eq('id', initialUser.id)
+          .eq('id', userId)
       }
       
       // Revalidate feed cache

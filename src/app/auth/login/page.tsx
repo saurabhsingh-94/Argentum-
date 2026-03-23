@@ -102,6 +102,8 @@ export default function LoginPage() {
         setShowMfa(true)
         setIsLoading(false)
       } else {
+        // Save session to saved_accounts for account switcher
+        await saveAccountSession(authData.user, authData.session)
         setIsLoading(false)
         router.push('/feed')
       }
@@ -125,6 +127,24 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const saveAccountSession = async (user: any, session: any) => {
+    if (!user || !session) return
+    try {
+      const { data: profile } = await supabase.from('users').select('username, display_name, avatar_url').eq('id', user.id).single()
+      const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
+      const filtered = saved.filter((a: any) => a.id !== user.id)
+      filtered.unshift({
+        id: user.id,
+        email: user.email,
+        username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0],
+        display_name: profile?.display_name || user.user_metadata?.full_name || null,
+        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || null,
+        session: { access_token: session.access_token, refresh_token: session.refresh_token }
+      })
+      localStorage.setItem('saved_accounts', JSON.stringify(filtered.slice(0, 5)))
+    } catch { /* non-critical */ }
   }
 
   const resendVerification = async () => {
