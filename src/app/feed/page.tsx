@@ -1,12 +1,11 @@
 // Build trigger: standardized routing and visibility updates
 import { createClient } from '@/lib/supabase/server'
-import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import FeedWithFilter from '@/components/FeedWithFilter'
 import SpeakHighlights from '@/components/SpeakHighlights'
 import { Flame, TrendingUp, Users, Target } from 'lucide-react'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -19,74 +18,80 @@ export default async function FeedPage() {
     redirect('/auth/login')
   }
 
-  if (!supabase) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-black mb-4">Configuration Required</h1>
-          <p className="text-foreground/50 text-sm">Please ensure Supabase environment variables are configured in Vercel.</p>
-        </div>
-      </div>
-    )
-  }
+  // Fetch all data with individual error handling so one failure doesn't crash the page
+  let posts: any[] = []
+  let count: number = 0
+  let highlights: any[] = []
+  let topBuilders: any[] = []
+  let trendingTags: { tag: string; count: number }[] = []
 
-
-  const getTrendingTags = unstable_cache(
-    async () => {
-      const supabaseInner = await createClient()
-      const { data } = await supabaseInner
-        .from('posts')
-        .select('category')
-        .eq('status', 'published')
-        .not('category', 'is', null)
-      return data
-    },
-    ['trending-tags'],
-    { revalidate: 300 }
-  )
-
-  const [
-    // @ts-ignore
-    { data: posts, count },
-    trendingData,
-    // @ts-ignore
-    { data: highlights },
-    // @ts-ignore
-    { data: topBuilders }
-  ] = await Promise.all([
-    supabase
+  try {
+    const { data: postsData, count: postsCount, error: postsError } = await supabase
       .from('posts')
       .select('*, users(id, username, display_name, avatar_url, bio, currently_building)', { count: 'exact' })
       .eq('status', 'published')
       .order('created_at', { ascending: false })
-      .limit(10),
-    getTrendingTags(),
-    supabase
+      .limit(10)
+
+    if (postsError) console.error('Feed posts error:', postsError.message)
+    else {
+      posts = postsData || []
+      count = postsCount || 0
+    }
+  } catch (e: any) {
+    console.error('Feed posts fetch failed:', e.message)
+  }
+
+  try {
+    const { data: highlightsData, error: highlightsError } = await supabase
       .from('posts')
       .select('*, users(id, username, display_name, avatar_url, bio, currently_building)')
       .eq('status', 'published')
       .eq('category', 'Speak')
       .order('created_at', { ascending: false })
-      .limit(5),
-    supabase
+      .limit(5)
+
+    if (highlightsError) console.error('Highlights error:', highlightsError.message)
+    else highlights = highlightsData || []
+  } catch (e: any) {
+    console.error('Highlights fetch failed:', e.message)
+  }
+
+  try {
+    const { data: buildersData, error: buildersError } = await supabase
       .from('users')
       .select('id, username, display_name, avatar_url, streak_count')
       .gt('streak_count', 0)
       .order('streak_count', { ascending: false })
       .limit(3)
-  ])
-  
-  const tagCounts: Record<string, number> = {}
-  trendingData?.forEach((p: { category: string | null }) => {
-    if (p.category) {
-      tagCounts[p.category] = (tagCounts[p.category] || 0) + 1
-    }
-  })
 
-  const trendingTags = Object.entries(tagCounts)
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+    if (buildersError) console.error('Top builders error:', buildersError.message)
+    else topBuilders = buildersData || []
+  } catch (e: any) {
+    console.error('Top builders fetch failed:', e.message)
+  }
+
+  try {
+    const { data: tagData, error: tagError } = await supabase
+      .from('posts')
+      .select('category')
+      .eq('status', 'published')
+      .not('category', 'is', null)
+
+    if (tagError) console.error('Trending tags error:', tagError.message)
+    else {
+      const tagCounts: Record<string, number> = {}
+      tagData?.forEach((p: { category: string | null }) => {
+        if (p.category) tagCounts[p.category] = (tagCounts[p.category] || 0) + 1
+      })
+      trendingTags = Object.entries(tagCounts)
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+    }
+  } catch (e: any) {
+    console.error('Trending tags fetch failed:', e.message)
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -103,7 +108,7 @@ export default async function FeedPage() {
                   The Build Feed
                </h1>
                <p className="text-foreground/50 text-sm max-w-lg leading-relaxed">
-                  Real-time intelligence from the world's most innovative builders. 
+                  Real-time intelligence from the world&apos;s most innovative builders. 
                   Collective progress, logged on-chain.
                </p>
             </header>
@@ -160,7 +165,7 @@ export default async function FeedPage() {
                   <h3 className="text-xs font-black uppercase tracking-widest">Top Builders</h3>
                </div>
                <div className="flex flex-col gap-6">
-                  {topBuilders && topBuilders.length > 0 ? topBuilders.map((builder: any, i: number) => (
+                  {topBuilders && topBuilders.length > 0 ? topBuilders.map((builder: any) => (
                     <div key={builder.id} className="flex items-center gap-3">
                        <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border overflow-hidden flex items-center justify-center text-xs font-black">
                          {builder.avatar_url ? <img src={builder.avatar_url} alt="" className="w-full h-full object-cover" /> : (builder.username?.[0] || '?').toUpperCase()}
@@ -170,15 +175,9 @@ export default async function FeedPage() {
                           <span className="text-[10px] text-foreground/40">🔥 {builder.streak_count} day streak</span>
                        </div>
                     </div>
-                  )) : [1,2,3].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 animate-pulse">
-                       <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border" />
-                       <div className="flex flex-col gap-1">
-                          <div className="h-2 w-20 bg-foreground/5 rounded" />
-                          <div className="h-2 w-14 bg-foreground/5 rounded" />
-                       </div>
-                    </div>
-                  ))}
+                  )) : (
+                    <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-widest text-center py-4">No builders yet</p>
+                  )}
                </div>
             </div>
           </aside>
