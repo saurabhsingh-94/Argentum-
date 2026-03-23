@@ -154,6 +154,15 @@ export default function ProfileClient({ initialProfile, posts, isOwner }: Profil
                       <span className="text-[10px] text-foreground/40 font-bold tracking-widest uppercase">GitHub</span>
                     </Link>
                   )}
+                  {(profile as any).twitter_username && (
+                    <Link href={`https://twitter.com/${(profile as any).twitter_username}`} target="_blank" className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-border hover:bg-foreground/10 transition-all group/social">
+                      <div className="flex items-center gap-3">
+                        <Twitter size={16} className="text-sky-400 group-hover/social:text-sky-300" />
+                        <span className="text-xs text-foreground/40 group-hover/social:text-foreground font-medium">@{(profile as any).twitter_username}</span>
+                      </div>
+                      <span className="text-[10px] text-foreground/40 font-bold tracking-widest uppercase">Twitter</span>
+                    </Link>
+                  )}
                   {profile.website_url && (
                     <Link href={profile.website_url.startsWith('http') ? profile.website_url : `https://${profile.website_url}`} target="_blank" className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-border hover:bg-foreground/10 transition-all group/social">
                       <div className="flex items-center gap-3">

@@ -27,6 +27,7 @@ export interface Database {
           open_to_work: boolean
           looking_for: string | null
           pinned_post_id: string | null
+          twitter_username: string | null
           public_key: string | null
           encrypted_private_key: string | null
           key_backup_method: string
@@ -55,6 +56,7 @@ export interface Database {
           open_to_work?: boolean
           looking_for?: string | null
           pinned_post_id?: string | null
+          twitter_username?: string | null
           public_key?: string | null
           encrypted_private_key?: string | null
           key_backup_method?: string
@@ -83,6 +85,7 @@ export interface Database {
           open_to_work?: boolean
           looking_for?: string | null
           pinned_post_id?: string | null
+          twitter_username?: string | null
           public_key?: string | null
           encrypted_private_key?: string | null
           key_backup_method?: string

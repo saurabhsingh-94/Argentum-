@@ -23,6 +23,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
   const [githubUsername, setGithubUsername] = useState(profile.github_username || '')
   const [instagramUsername, setInstagramUsername] = useState(profile.instagram_username || '')
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || '')
+  const [twitterUsername, setTwitterUsername] = useState((profile as any).twitter_username || '')
   const [isPublic, setIsPublic] = useState(profile.is_public !== false)
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || '')
   const [skills, setSkills] = useState(profile.skills?.join(', ') || '')
@@ -118,6 +119,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
           github_username: githubUsername || null,
           instagram_username: instagramUsername || null,
           website_url: websiteUrl || null,
+          twitter_username: twitterUsername || null,
           is_public: isPublic,
           avatar_url: avatarUrl,
           skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
@@ -142,6 +144,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
         github_username: githubUsername || null,
         instagram_username: instagramUsername || null,
         website_url: websiteUrl || null,
+        twitter_username: twitterUsername || null,
         is_public: isPublic,
         avatar_url: avatarUrl,
         skills: skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
@@ -301,6 +304,20 @@ export default function EditProfileModal({ isOpen, onClose, profile, onUpdate }:
                         type="text"
                         value={githubUsername}
                         onChange={(e) => setGithubUsername(e.target.value)}
+                        placeholder="yourhandle"
+                        className="w-full bg-foreground/5 border border-border rounded-xl py-3 pl-10 pr-4 text-xs text-foreground focus:outline-none focus:border-foreground/40 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Twitter / X <span className="text-foreground/10 font-normal lowercase">(Optional)</span></label>
+                    <div className="relative">
+                      <Twitter className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20" size={14} />
+                      <input
+                        type="text"
+                        value={twitterUsername}
+                        onChange={(e) => setTwitterUsername(e.target.value)}
                         placeholder="yourhandle"
                         className="w-full bg-foreground/5 border border-border rounded-xl py-3 pl-10 pr-4 text-xs text-foreground focus:outline-none focus:border-foreground/40 transition-all"
                       />

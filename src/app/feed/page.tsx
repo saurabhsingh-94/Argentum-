@@ -50,7 +50,9 @@ export default async function FeedPage() {
     { data: posts, count },
     trendingData,
     // @ts-ignore
-    { data: highlights }
+    { data: highlights },
+    // @ts-ignore
+    { data: topBuilders }
   ] = await Promise.all([
     supabase
       .from('posts')
@@ -65,7 +67,13 @@ export default async function FeedPage() {
       .eq('status', 'published')
       .eq('category', 'Speak')
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(5),
+    supabase
+      .from('users')
+      .select('id, username, display_name, avatar_url, streak_count')
+      .gt('streak_count', 0)
+      .order('streak_count', { ascending: false })
+      .limit(3)
   ])
   
   const tagCounts: Record<string, number> = {}
@@ -145,27 +153,33 @@ export default async function FeedPage() {
                </div>
             </div>
 
-            {/* Top Builders */}
+          {/* Top Builders */}
             <div className="bg-card glass-card border border-border rounded-2xl p-6 shadow-2xl">
                <div className="flex items-center gap-2 mb-6">
                   <Users size={16} className="text-purple-500" />
                   <h3 className="text-xs font-black uppercase tracking-widest">Top Builders</h3>
                </div>
                <div className="flex flex-col gap-6">
-                  {[1, 2, 3].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border" />
-                       <div className="flex flex-col">
-                          <span className="text-xs font-bold text-foreground">Builder #{i+1}</span>
-                          <span className="text-[10px] text-foreground/40">@{['satoshi', 'vitalik', 'builder'][i]}</span>
+                  {topBuilders && topBuilders.length > 0 ? topBuilders.map((builder: any, i: number) => (
+                    <div key={builder.id} className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border overflow-hidden flex items-center justify-center text-xs font-black">
+                         {builder.avatar_url ? <img src={builder.avatar_url} alt="" className="w-full h-full object-cover" /> : (builder.username?.[0] || '?').toUpperCase()}
                        </div>
-                       <button className="ml-auto px-3 py-1 rounded-full border border-border text-[8px] font-black uppercase tracking-widest hover:bg-foreground/5 transition-all">Follow</button>
+                       <div className="flex flex-col">
+                          <span className="text-xs font-bold text-foreground">{builder.display_name || builder.username}</span>
+                          <span className="text-[10px] text-foreground/40">🔥 {builder.streak_count} day streak</span>
+                       </div>
+                    </div>
+                  )) : [1,2,3].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 animate-pulse">
+                       <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border" />
+                       <div className="flex flex-col gap-1">
+                          <div className="h-2 w-20 bg-foreground/5 rounded" />
+                          <div className="h-2 w-14 bg-foreground/5 rounded" />
+                       </div>
                     </div>
                   ))}
                </div>
-               <button className="w-full mt-8 py-2 text-[8px] font-black uppercase tracking-[0.3em] text-foreground/40 hover:text-foreground transition-all border-t border-border">
-                  View Leaderboard
-               </button>
             </div>
           </aside>
         </div>
