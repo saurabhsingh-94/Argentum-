@@ -249,6 +249,10 @@ export interface Database {
           conversation_id: string
           sender_id: string
           content: string
+          attachment_url: string | null
+          attachment_type: string | null
+          attachment_name: string | null
+          attachment_size: number | null
           expires_at: string | null
           read_at: string | null
           deleted_for: string[]
@@ -260,6 +264,10 @@ export interface Database {
           conversation_id: string
           sender_id: string
           content: string
+          attachment_url?: string | null
+          attachment_type?: string | null
+          attachment_name?: string | null
+          attachment_size?: number | null
           expires_at?: string | null
           read_at?: string | null
           deleted_for?: string[]
@@ -271,6 +279,10 @@ export interface Database {
           conversation_id?: string
           sender_id?: string
           content?: string
+          attachment_url?: string | null
+          attachment_type?: string | null
+          attachment_name?: string | null
+          attachment_size?: number | null
           expires_at?: string | null
           read_at?: string | null
           deleted_for?: string[]

@@ -63,7 +63,6 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
         setHasMore(false)
       }
     }
-    setLoading(true) // Artificially keep loading for a bit for smooth UI
     setTimeout(() => setLoading(false), 500)
   }
 

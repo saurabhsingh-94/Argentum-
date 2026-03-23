@@ -63,8 +63,7 @@ export default function PostCard({
     setShowMenu(false)
   }
 
-  // Extract skills (mocking if not present, but real app should have them in user object)
-  const skills = post.users?.skills || ['React', 'Node.js', 'PostgreSQL']
+  const skills: string[] = post.users?.skills || []
   
   // Extract code snippet preview
   const codeMatch = post.content.match(/```(?:\w+)?\n([\s\S]*?)\n```/)

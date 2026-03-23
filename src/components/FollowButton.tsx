@@ -22,11 +22,11 @@ export default function FollowButton({ followingId, initialIsFollowing, onCountC
   }, [initialIsFollowing])
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setCurrentUserId(session?.user?.id || null)
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUserId(user?.id || null)
     }
-    getSession()
+    getUser()
   }, [supabase])
 
   const handleFollow = async () => {

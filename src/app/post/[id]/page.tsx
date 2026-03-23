@@ -1,7 +1,7 @@
 "use client"
 
 import { createClient } from '@/lib/supabase/client'
-import { notFound, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import ReactionButton from '@/components/ReactionButton'
 import CommentsSection from '@/components/CommentsSection'
@@ -70,7 +70,10 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         supabase.auth.getUser()
       ])
 
-      if (!postData) return notFound()
+      if (!postData) {
+        router.replace('/feed')
+        return
+      }
       
       setPost(postData)
       setCurrentUser(user)
@@ -86,7 +89,7 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
     </div>
   )
 
-  if (!post) return notFound()
+  if (!post) return null
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">

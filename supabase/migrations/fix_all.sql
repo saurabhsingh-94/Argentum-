@@ -99,5 +99,12 @@ CREATE POLICY "Authenticated delete own avatars"
 ON storage.objects FOR DELETE TO authenticated
 USING (bucket_id = 'avatars');
 
--- 6. Reload PostgREST schema cache
+-- 6. Add attachment columns to messages table
+ALTER TABLE public.messages
+ADD COLUMN IF NOT EXISTS attachment_url TEXT,
+ADD COLUMN IF NOT EXISTS attachment_type TEXT,
+ADD COLUMN IF NOT EXISTS attachment_name TEXT,
+ADD COLUMN IF NOT EXISTS attachment_size BIGINT;
+
+-- 7. Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
