@@ -52,13 +52,19 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
     setLoading(true)
     setError(null)
     try {
-      const { error } = await supabase.auth.mfa.verify({
+      // Step 1: Create a challenge for this factor
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: factorId!
+      })
+      if (challengeError) throw challengeError
+
+      // Step 2: Verify the challenge with the TOTP code
+      const { error: verifyError } = await supabase.auth.mfa.verify({
         factorId: factorId!,
-        challengeId: factorId!, // For enrollment, challengeId is often the factorId or managed internally
+        challengeId: challengeData.id,
         code: otp.join('')
       })
-
-      if (error) throw error
+      if (verifyError) throw verifyError
 
       setStep('success')
       setTimeout(() => {
