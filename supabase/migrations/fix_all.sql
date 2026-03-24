@@ -109,8 +109,27 @@ ADD COLUMN IF NOT EXISTS attachment_size BIGINT;
 -- 7. Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
 
--- 8. Enable realtime for messages and users tables
--- Required for postgres_changes subscriptions to work
-ALTER PUBLICATION supabase_realtime ADD TABLE messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE users;
-ALTER PUBLICATION supabase_realtime ADD TABLE message_reactions;
+-- 8. Enable realtime for messages, users, message_reactions (safe — skips if already added)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'users'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE users;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'message_reactions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE message_reactions;
+  END IF;
+END $$;
