@@ -26,10 +26,8 @@ function LayoutContent({ children, isMessages, isAuth, isPageMounted, pathname }
 
   return (
     <>
-      {/* Clean Background - Removing mesh, blob, and noise */}
-      <div className={`fixed inset-0 z-[-1] transition-opacity duration-1000 ${theme === 'glass' ? 'opacity-[0.03]' : 'opacity-0'}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-      </div>
+      {/* Glass theme ambient background — orbs are painted via CSS on body::before */}
+      <div className={`fixed inset-0 z-[-1] transition-opacity duration-1000 ${theme === 'glass' ? 'opacity-0' : 'opacity-0'}`} />
 
       {!isMessages && !isAuth && <Navbar />}
 
