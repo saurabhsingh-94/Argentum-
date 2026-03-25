@@ -98,7 +98,7 @@ export default async function FeedPage() {
       <div className="w-full px-4 lg:px-12 py-10">
         <div className="flex flex-col lg:flex-row gap-10 justify-between">
           {/* Main Feed */}
-          <main className="flex-1 max-w-4xl">
+          <main className="flex-1 max-w-6xl">
             <header className="mb-10">
                <div className="flex items-center gap-2 mb-2 text-green-500">
                   <Flame size={16} />

@@ -140,7 +140,7 @@ export default function PostCard({
         />
       </motion.div>
 
-      <div className="p-6 flex flex-col h-full relative z-10">
+      <div className="p-8 flex flex-col h-full relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export default function PostCard({
             
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <Link href={`/profile/${post.users?.username}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors truncate">
+                <Link href={`/profile/${post.users?.username}`} className="text-lg font-bold text-text-primary hover:text-primary transition-colors truncate">
                   {post.users?.display_name || post.users?.username}
                 </Link>
                 {isOwner && (
@@ -240,10 +240,10 @@ export default function PostCard({
 
         {/* Content Area */}
         <Link href={`/post/${post.id}`} className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold text-text-primary leading-snug group-hover:text-primary glass:glass-text transition-colors">
+          <h3 className="text-xl font-bold text-text-primary leading-snug group-hover:text-primary glass:glass-text transition-colors">
             {post.title}
           </h3>
-          <p className="text-sm text-text-secondary line-clamp-3 leading-relaxed">
+          <p className="text-sm text-text-secondary line-clamp-4 leading-relaxed">
             {post.content.replace(/[#*`]/g, '')}
           </p>
 
