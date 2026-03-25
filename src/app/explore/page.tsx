@@ -38,7 +38,7 @@ function ExploreContent() {
     if (activeTab === 'builds') {
       let query = supabase
         .from('posts')
-        .select('*, users(id, username, display_name, avatar_url, bio, currently_building, created_at, skills)')
+        .select('*, users!posts_user_id_fkey(id, username, display_name, avatar_url, bio, currently_building, created_at, skills)')
         .eq('status', 'published')
 
       if (selectedCategory !== 'All') {
