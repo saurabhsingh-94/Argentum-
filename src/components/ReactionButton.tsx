@@ -47,7 +47,7 @@ export default function ReactionButton({ postId, initialReactions = [], currentU
   const fetchReactions = async () => {
     const { data } = await supabase
       .from('post_reactions')
-      .select('*, users(username, avatar_url, display_name)')
+      .select('*, users!post_reactions_user_id_fkey(username, avatar_url, display_name)')
       .eq('post_id', postId)
     if (data) setReactions(data)
   }

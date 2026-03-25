@@ -6,7 +6,7 @@ import MarkdownRenderer from '@/components/MarkdownRenderer'
 import ReactionButton from '@/components/ReactionButton'
 import CommentsSection from '@/components/CommentsSection'
 import ReportModal from '@/components/ReportModal'
-import { Calendar, ShieldCheck, Tag, Flag, ArrowLeft, Zap } from 'lucide-react'
+import { Calendar, ShieldCheck, Tag, Flag, ArrowLeft, Zap, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, use } from 'react'
 import VerificationBadge from '@/components/VerificationBadge'
@@ -75,7 +75,11 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         return
       }
       
-      setPost(postData)
+      if (postData) {
+        setPost(postData)
+        // Increment view count (fire and forget)
+        supabase.rpc('increment_post_views', { post_id_input: id }).catch(() => {})
+      }
       setCurrentUser(user)
       setLoading(false)
     }
@@ -115,6 +119,10 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
               <div className="flex items-center gap-1.5 font-mono">
                 <Calendar size={14} />
                 <span>{new Date(post.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-mono">
+                <Activity size={14} />
+                <span>{post.views || 0} views</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Tag size={14} />

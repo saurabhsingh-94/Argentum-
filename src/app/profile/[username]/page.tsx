@@ -44,7 +44,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const [{ data: posts }, { data: streakHistory }] = await Promise.all([
     supabase
       .from('posts')
-      .select('*, users(id, username, display_name, avatar_url, bio, currently_building)')
+      .select('*, users!posts_user_id_fkey(id, username, display_name, avatar_url, bio, currently_building, created_at)')
       // @ts-ignore
       .eq('user_id', profile.id)
       .eq('status', 'published')

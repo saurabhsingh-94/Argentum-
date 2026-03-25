@@ -2,18 +2,19 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
-  MessageCircle, 
-  Flag, 
-  MoreHorizontal, 
-  ArrowUp, 
-  Handshake, 
-  Share2, 
-  Bookmark, 
-  Link2, 
-  Check, 
+import {
+  MessageCircle,
+  Flag,
+  MoreHorizontal,
+  ArrowUp,
+  Handshake,
+  Share2,
+  Bookmark,
+  Link2,
+  Check,
   Zap,
-  Users
+  Users,
+  Activity
 } from 'lucide-react'
 import { Database } from '@/types/database'
 import ReactionButton from './ReactionButton'
@@ -317,6 +318,10 @@ export default function PostCard({
                  <span className="text-[8px] font-black text-green-500 uppercase tracking-[0.2em]">Verified</span>
                </motion.div>
              )}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <Activity size={12} className="text-text-secondary/50" />
+              <span className="text-[10px] font-mono text-text-secondary/50 font-bold uppercase tracking-widest">{post.views || 0} views</span>
+            </div>
           </div>
         </div>
       </div>

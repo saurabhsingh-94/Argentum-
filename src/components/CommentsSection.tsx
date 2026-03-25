@@ -43,7 +43,7 @@ export default function CommentsSection({ postId, postOwnerId, currentUserId }: 
     setLoading(true)
     let query = supabase
       .from('comments')
-      .select('*, users(username, display_name, avatar_url, skills)')
+      .select('*, users!comments_user_id_fkey(username, display_name, avatar_url, skills)')
       .eq('post_id', postId)
 
     if (sortBy === 'oldest') {
