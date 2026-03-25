@@ -242,10 +242,10 @@ export default function LoginPage() {
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
-                    <h1 className="text-xl font-bold text-white mb-2 tracking-tight">
+                    <h1 className="text-xl font-bold text-foreground mb-2 tracking-tight">
                       {isLogin ? 'Welcome back, Builder' : 'Join the Protocol'}
                     </h1>
-                    <p className="text-sm text-gray-500 mb-8 font-medium">
+                    <p className="text-sm text-foreground/40 mb-8 font-medium">
                       {isLogin ? 'Sign in to capture your ship logs.' : 'Create an account to start your build streak.'}
                     </p>
                   </motion.div>
@@ -272,7 +272,7 @@ export default function LoginPage() {
                   <button 
                     onClick={() => handleOAuth('github')}
                     disabled={isLoading}
-                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98] shadow-premium"
+                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-foreground py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-foreground/20 active:scale-[0.98] shadow-premium"
                   >
                     <Github size={16} />
                     <span>Continue with GitHub</span>
@@ -280,7 +280,7 @@ export default function LoginPage() {
                   <button 
                     onClick={() => handleOAuth('google')}
                     disabled={isLoading}
-                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-white/20 active:scale-[0.98] shadow-premium"
+                    className="flex items-center justify-center gap-3 w-full glass-button-3d text-foreground py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:border-foreground/20 active:scale-[0.98] shadow-premium"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.91 3.23-2.02 4.35-1.11 1.11-2.83 2.15-5.82 2.15-4.67 0-8.52-3.8-8.52-8.5s3.85-8.5 8.52-8.5c2.56 0 4.41.91 5.8 2.3l2.3-2.3C18.41 1.54 15.68 0 12.48 0 6.94 0 2.45 4.5 2.45 10s4.49 10 10.03 10c3.02 0 5.3-.99 7.03-2.73 1.77-1.78 2.33-4.3 2.33-6.33 0-.6-.05-1.18-.15-1.72h-9.2z"/></svg>
                     <span>Continue with Google</span>
@@ -314,7 +314,7 @@ export default function LoginPage() {
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="johndoe"
                             required={!isLogin}
-                            className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                            className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-foreground/20"
                           />
                         </div>
                       </motion.div>
@@ -322,31 +322,31 @@ export default function LoginPage() {
                   </AnimatePresence>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
+                    <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Email Address</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20" size={16} />
                       <input 
                         type="email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@company.com"
                         required
-                        className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                        className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-foreground/20"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Password</label>
+                    <label className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest ml-1">Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20" size={16} />
                       <input 
                         type="password" 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="w-full bg-[#0d0d0d] border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-gray-700"
+                        className="w-full bg-background border border-border rounded-xl py-3 pl-12 pr-4 text-sm text-foreground focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all placeholder:text-foreground/20"
                       />
                     </div>
                   </div>
@@ -376,12 +376,12 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-8 text-center text-[11px] font-bold">
-                  <span className="text-gray-600 uppercase tracking-tight">
+                  <span className="text-foreground/40 uppercase tracking-tight">
                     {isLogin ? "Don't have an account? " : "Already registered? "}
                   </span>
                   <button 
                     onClick={() => setIsLogin(!isLogin)}
-                    className="text-white hover:text-green-400 transition-colors uppercase tracking-tight"
+                    className="text-foreground hover:text-green-500 transition-colors uppercase tracking-tight underline underline-offset-4"
                   >
                     {isLogin ? 'Sign Up' : 'Log In'}
                   </button>
