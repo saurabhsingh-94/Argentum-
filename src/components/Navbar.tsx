@@ -264,17 +264,22 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                      </motion.div>
                    </button>
 
-                   <div className="relative" ref={dropdownRef}>
-                      <button 
-                        onClick={() => setShowDropdown(!showDropdown)}
-                        className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/5 flex items-center justify-center group/avatar hover:border-white/30 transition-all"
+                   <div 
+                    className="relative" 
+                    ref={dropdownRef}
+                    onMouseEnter={() => setShowDropdown(true)}
+                    onMouseLeave={() => setShowDropdown(false)}
+                   >
+                      <Link 
+                        href={`/profile/${profile?.username}`}
+                        className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/5 flex items-center justify-center group/avatar hover:border-white/30 transition-all block"
                       >
                          {profile?.avatar_url && !avatarError ? (
                             <Image src={profile.avatar_url} alt="A" width={32} height={32} className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
                          ) : (
                             <span className="text-[10px] font-black opacity-40">{profile?.username?.[0] || 'B'}</span>
                          )}
-                      </button>
+                      </Link>
                       
                       <AnimatePresence>
                         {showDropdown && (
