@@ -15,7 +15,8 @@ import {
   Flame,
   ChevronDown,
   Home,
-  Compass
+  Compass,
+  Edit2
 } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import AccountSwitcher from './AccountSwitcher'
@@ -58,7 +59,6 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
   }, [])
 
   const handleClickOutside = useCallback((event: MouseEvent) => {
-    // If clicking outside the island, close both expansion and dropdown
     if (islandRef.current && !islandRef.current.contains(event.target as Node)) {
       setIsExpanded(false)
       setShowDropdown(false)
@@ -127,7 +127,13 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
 
   return (
     <>
-      <div className="fixed top-6 left-0 right-0 z-[100] flex justify-center pointer-events-none px-4">
+      <div 
+        className="fixed top-6 left-0 right-0 z-[100] flex justify-center pointer-events-none px-4"
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => {
+          if (!showDropdown) setIsExpanded(false)
+        }}
+      >
         <motion.div
           ref={islandRef}
           layout
@@ -281,8 +287,9 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                                 <span className="text-[10px] font-black uppercase text-white truncate block">{profile?.display_name || 'Builder'}</span>
                                 <span className="text-[8px] text-muted font-mono truncate block">@{profile?.username || 'anonymous'}</span>
                              </div>
-                             <div className="p-1.5">
-                                <DropdownItem icon={<UserIcon size={12} />} label="Profile" href={`/profile/${profile?.username}`} />
+                             <div className="p-1.5 flex flex-col gap-0.5">
+                                <DropdownItem icon={<UserIcon size={12} />} label="Visit Profile" href={`/profile/${profile?.username}`} />
+                                <DropdownItem icon={<Edit2 size={12} />} label="Edit Profile" href="/settings/profile" />
                                 <DropdownItem icon={<Settings size={12} />} label="Settings" href="/settings" />
                                 <div className="h-px bg-white/5 my-1" />
                                 <button 
