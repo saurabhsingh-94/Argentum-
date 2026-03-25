@@ -140,7 +140,7 @@ export default function PostCard({
         />
       </motion.div>
 
-      <div className="p-5 flex flex-col h-full relative z-10">
+      <div className="p-6 flex flex-col h-full relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -157,9 +157,9 @@ export default function PostCard({
               </div>
             </Link>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <Link href={`/profile/${post.users?.username}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">
+                <Link href={`/profile/${post.users?.username}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors truncate">
                   {post.users?.display_name || post.users?.username}
                 </Link>
                 {isOwner && (
@@ -183,10 +183,10 @@ export default function PostCard({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-text-muted">
+              <div className="flex items-center gap-2 text-[10px] text-text-muted truncate">
                 <span className="font-mono">@{post.users?.username}</span>
                 <span>•</span>
-                <span>Joined {post.users?.created_at ? new Date(post.users.created_at).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '...'}</span>
+                <span className="whitespace-nowrap">Joined {post.users?.created_at ? new Date(post.users.created_at).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '...'}</span>
               </div>
             </div>
           </div>
@@ -295,14 +295,14 @@ export default function PostCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-             <div className="hidden lg:flex flex-col items-end">
-                <div className="flex items-center gap-1 text-[8px] font-mono text-text-muted/50 uppercase tracking-widest">
+          <div className="flex items-center gap-3 shrink-0">
+             <div className="hidden sm:flex flex-col items-end">
+                <div className="flex items-center gap-1 text-[8px] font-mono text-text-muted/40 uppercase tracking-widest leading-none">
                    {post.verification_status === 'verified' && <Check size={8} className="text-green-500" />}
                    Hash
                 </div>
-                <span className="text-[9px] font-mono text-text-muted/30 truncate w-16 text-right">
-                  {post.content_hash?.slice(0, 10)}
+                <span className="text-[9px] font-mono text-text-muted/30 tabular-nums">
+                  {post.content_hash?.slice(0, 8)}
                 </span>
              </div>
              {post.verification_status === 'verified' && (

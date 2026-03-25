@@ -33,14 +33,14 @@ export default function SpeakHighlights({ highlights }: { highlights: Highlight[
         </Link>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4">
+      <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4">
         {highlights.map((item, i) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="flex-shrink-0 w-80 group"
+            className="flex-shrink-0 w-[340px] group"
           >
             <Link href={`/post/${item.id}`}>
               <div className="h-full bg-card border border-amber-500/10 rounded-2xl p-5 hover:border-amber-500/30 transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.05)] relative overflow-hidden">
