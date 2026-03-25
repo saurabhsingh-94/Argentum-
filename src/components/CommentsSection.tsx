@@ -18,6 +18,7 @@ interface Comment {
   }
   likes_count?: number
   is_liked?: boolean
+  parent_id?: string | null
 }
 
 interface CommentsSectionProps {
@@ -66,16 +67,15 @@ export default function CommentsSection({ postId, postOwnerId, currentUserId }: 
 
     setSubmitting(true)
     let finalContent = newComment
-    if (replyTo) {
-      finalContent = `> @${replyTo.users.username}: ${replyTo.content.slice(0, 50)}${replyTo.content.length > 50 ? '...' : ''}\n\n${newComment}`
-    }
+    const parentId = replyTo?.id || null
 
     const { data, error } = await supabase
       .from('comments')
       .insert({
         post_id: postId,
         user_id: currentUserId,
-        content: finalContent
+        content: finalContent,
+        parent_id: parentId
       })
       .select('*, users(username, display_name, avatar_url, skills)')
       .single()
@@ -170,70 +170,104 @@ export default function CommentsSection({ postId, postOwnerId, currentUserId }: 
             Be the first to comment on this build.
           </div>
         ) : (
-          comments.map((comment, i) => (
-            <div 
-              key={comment.id} 
-              className="glass-card p-6 flex flex-col gap-4 group animate-fade-in-up"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center overflow-hidden">
-                    {comment.users.avatar_url ? (
-                      <img src={comment.users.avatar_url} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-sm font-black">{comment.users.username?.[0]?.toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground text-sm">{comment.users.display_name || comment.users.username}</span>
-                      {comment.user_id === postOwnerId && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-[8px] font-black uppercase tracking-widest text-green-500">Author</span>
-                      )}
-                      {comment.users.skills?.slice(0, 2).map(skill => (
-                        <span key={skill} className="px-1.5 py-0.5 rounded-md bg-foreground/5 border border-border text-[8px] font-bold text-foreground/40 uppercase tracking-tighter">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-[10px] text-foreground/40 font-mono">@{comment.users.username} • {new Date(comment.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
+          (() => {
+            const rootComments = comments.filter(c => !c.parent_id);
+            const getChildren = (parentId: string) => comments.filter(c => c.parent_id === parentId);
+
+            return rootComments.map((comment, i) => (
+              <div key={comment.id} className="flex flex-col gap-4 mb-4">
+                <CommentItem 
+                  comment={comment} 
+                  postOwnerId={postOwnerId} 
+                  currentUserId={currentUserId}
+                  onDelete={handleDelete}
+                  onReply={setReplyTo}
+                />
                 
-                <div className="flex items-center gap-2">
-                  {comment.user_id === currentUserId && (
-                    <button onClick={() => handleDelete(comment.id)} className="p-2 text-foreground/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                  <button className="p-2 text-foreground/20 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all">
-                    <MoreVertical size={14} />
-                  </button>
-                </div>
+                {/* Replies Container */}
+                {getChildren(comment.id).length > 0 && (
+                  <div className="ml-8 lg:ml-12 pl-6 border-l border-border flex flex-col gap-4 mt-2">
+                    {getChildren(comment.id).map(child => (
+                      <CommentItem 
+                        key={child.id} 
+                        comment={child} 
+                        postOwnerId={postOwnerId} 
+                        currentUserId={currentUserId}
+                        onDelete={handleDelete}
+                        onReply={setReplyTo}
+                        isReply
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-
-               <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap pl-13">
-                {comment.content}
-              </div>
-
-              <div className="flex items-center gap-6 pl-13">
-                <button className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/40 hover:text-red-500 transition-all">
-                  <Heart size={14} />
-                  <span>0</span>
-                </button>
-                <button onClick={() => { setReplyTo(comment); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/40 hover:text-foreground transition-all">
-                  <Reply size={14} />
-                  <span>Reply</span>
-                </button>
-                <button className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/40 hover:text-foreground opacity-0 group-hover:opacity-100 transition-all ml-auto">
-                  <Flag size={14} />
-                  <span>Report</span>
-                </button>
-              </div>
-            </div>
-          ))
+            ));
+          })()
         )}
+      </div>
+    </div>
+  )
+}
+
+function CommentItem({ 
+  comment, 
+  postOwnerId, 
+  currentUserId, 
+  onDelete, 
+  onReply,
+  isReply = false
+}: { 
+  comment: Comment, 
+  postOwnerId: string, 
+  currentUserId?: string,
+  onDelete: (id: string) => void,
+  onReply: (c: Comment) => void,
+  isReply?: boolean
+}) {
+  return (
+    <div className={`glass-card p-6 flex flex-col gap-4 group animate-fade-in-up ${isReply ? 'bg-foreground/[0.02] border-dashed scale-[0.98]' : ''}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center overflow-hidden">
+            {comment.users.avatar_url ? (
+              <img src={comment.users.avatar_url} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-black">{comment.users.username?.[0]?.toUpperCase()}</span>
+            )}
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground text-sm">{comment.users.display_name || comment.users.username}</span>
+              {comment.user_id === postOwnerId && (
+                <span className="px-1.5 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-[8px] font-black uppercase tracking-widest text-green-500">Author</span>
+              )}
+            </div>
+            <span className="text-[10px] text-foreground/40 font-mono">@{comment.users.username} • {new Date(comment.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {comment.user_id === currentUserId && (
+            <button onClick={() => onDelete(comment.id)} className="p-2 text-foreground/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+        {comment.content}
+      </div>
+
+      <div className="flex items-center gap-6">
+        <button className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/40 hover:text-red-500 transition-all">
+          <Heart size={14} />
+          <span>0</span>
+        </button>
+        <button onClick={() => { onReply(comment); window.scrollTo({ top: 300, behavior: 'smooth' }); }} className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/40 hover:text-foreground transition-all">
+          <Reply size={14} />
+          <span>Reply</span>
+        </button>
       </div>
     </div>
   )
