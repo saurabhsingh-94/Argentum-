@@ -8,7 +8,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { 
   Plus, 
   Search, 
-  MessageCircle, 
   Settings,
   LogOut,
   User as UserIcon,
@@ -16,7 +15,9 @@ import {
   ChevronDown,
   Home,
   Compass,
-  Edit2
+  Edit2,
+  FileText,
+  ShieldCheck
 } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import AccountSwitcher from './AccountSwitcher'
@@ -281,16 +282,19 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                             initial={{ opacity: 0, scale: 0.9, y: 8 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 8 }}
-                            className="absolute right-0 mt-3 w-56 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-3xl z-[150] overflow-hidden"
+                            className="absolute right-0 mt-3 w-56 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-3xl z-[150] overflow-hidden"
                           >
                              <div className="p-4 bg-white/[0.03] border-b border-white/5">
                                 <span className="text-[10px] font-black uppercase text-white truncate block">{profile?.display_name || 'Builder'}</span>
                                 <span className="text-[8px] text-muted font-mono truncate block">@{profile?.username || 'anonymous'}</span>
                              </div>
                              <div className="p-1.5 flex flex-col gap-0.5">
-                                <DropdownItem icon={<UserIcon size={12} />} label="Visit Profile" href={`/profile/${profile?.username}`} />
+                                <DropdownItem icon={<UserIcon size={12} />} label="My Profile" href={`/profile/${profile?.username}`} />
                                 <DropdownItem icon={<Edit2 size={12} />} label="Edit Profile" href="/settings/profile" />
                                 <DropdownItem icon={<Settings size={12} />} label="Settings" href="/settings" />
+                                <div className="h-px bg-white/5 my-1" />
+                                <DropdownItem icon={<FileText size={12} />} label="Terms of Service" href="/terms" />
+                                <DropdownItem icon={<ShieldCheck size={12} />} label="Privacy Policy" href="/privacy" />
                                 <div className="h-px bg-white/5 my-1" />
                                 <button 
                                   onClick={handleSignOut}
