@@ -33,18 +33,14 @@ export default function Footer() {
             <h4 className="text-[10px] font-bold text-foreground uppercase tracking-[0.2em]">Product</h4>
             <div className="flex flex-col gap-3">
               <FooterLink href="/feed">Feed</FooterLink>
-              <FooterLink href="/explore">Explore</FooterLink>
-              <FooterLink href="/challenges">Challenges</FooterLink>
-              <FooterLink href="/verified">Verified Builds</FooterLink>
+              <FooterLink href="/new">Deploy Build</FooterLink>
             </div>
           </div>
 
           <div className="flex flex-col gap-6">
             <h4 className="text-[10px] font-bold text-foreground uppercase tracking-[0.2em]">Platform</h4>
             <div className="flex flex-col gap-3">
-              <FooterLink href="/privacy">Privacy Policy</FooterLink>
-              <FooterLink href="/terms">Terms of Service</FooterLink>
-              <FooterLink href="/contact">Report an Issue</FooterLink>
+              <FooterLink href="/">Home</FooterLink>
               <FooterLink href="mailto:hello@argentum.build">Contact Support</FooterLink>
             </div>
           </div>

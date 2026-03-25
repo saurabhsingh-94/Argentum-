@@ -76,27 +76,40 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
   
   useEffect(() => {
     const fetchData = async () => {
-      const [{ data: postData }, { data: { user } }] = await Promise.all([
-        supabase
+      try {
+        // 1. Fetch Post (Priority)
+        const { data: postData, error: postError } = await supabase
           .from('posts')
           .select('*, users!posts_user_id_fkey(id, username, display_name, avatar_url, bio, currently_building, created_at)')
           .eq('id', id)
-          .single(),
-        supabase.auth.getUser()
-      ])
+          .single()
 
-      if (!postData) {
-        router.replace('/feed')
-        return
-      }
-      
-      if (postData) {
+        if (postError || !postData) {
+          console.error('Post fetch error:', postError)
+          router.replace('/feed')
+          return
+        }
+
         setPost(postData)
-        // Increment view count (fire and forget)
+        // Set loading false early if we have the post? 
+        // No, we need currentUser for canVerify and other logic.
+        // But let's set it anyway and handle null user.
+        setLoading(false)
+
+        // 2. Fetch User (Non-blocking for render, but needed for actions)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            setCurrentUser(user)
+        } catch (e) {
+            console.warn('Auth check skipped or failed:', e)
+        }
+        
+        // 3. Increment views
         supabase.rpc('increment_post_views', { post_id_input: id }).catch(() => {})
+      } catch (err) {
+        console.error('Fatal data fetch error:', err)
+        setLoading(false)
       }
-      setCurrentUser(user)
-      setLoading(false)
     }
 
     fetchData()

@@ -189,7 +189,10 @@ export default function NewPostClient({ initialUser }: NewPostClientProps) {
       fetch('/api/posts/revalidate', { method: 'POST' }).catch(() => {})
       
       router.refresh()
-      router.push(`/post/${data.id}`)
+      // Give the router a moment to catch up, then redirect
+      setTimeout(() => {
+        router.push(`/post/${data.id}`)
+      }, 100)
     } catch (error: any) {
       console.error('Post creation failed:', error)
       alert(error.message || "Failed to create post. Please try again.")
