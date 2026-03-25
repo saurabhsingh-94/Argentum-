@@ -151,7 +151,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             damping: 30,
             mass: 0.8
           }}
-          className="pointer-events-auto relative bg-black/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.5),0_0_1px_rgba(255,255,255,0.1)] overflow-hidden group/island silver-glow-sm island-shimmer"
+          className="pointer-events-auto relative bg-background/80 backdrop-blur-2xl border border-border shadow-[0_0_40px_rgba(0,0,0,0.5),0_0_1px_rgba(255,255,255,0.1)] overflow-hidden group/island silver-glow-sm island-shimmer transition-colors"
         >
           <div className="flex items-center h-14 px-3 relative">
             <div className="flex items-center gap-3 shrink-0 ml-1">
@@ -266,14 +266,14 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                    </button>
 
                    <div 
-                    className="relative" 
+                    className="relative group/avatar-container" 
                     ref={dropdownRef}
                     onMouseEnter={() => setShowDropdown(true)}
                     onMouseLeave={() => setShowDropdown(false)}
                    >
                       <Link 
                         href={`/profile/${profile?.username}`}
-                        className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-white/5 flex items-center justify-center group/avatar hover:border-white/30 transition-all block"
+                        className="w-8 h-8 rounded-full border border-border overflow-hidden bg-foreground/5 flex items-center justify-center hover:border-foreground/30 transition-all block"
                       >
                          {profile?.avatar_url && !avatarError ? (
                             <Image src={profile.avatar_url} alt="A" width={32} height={32} className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
@@ -288,10 +288,10 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
                             initial={{ opacity: 0, scale: 0.9, y: 8 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 8 }}
-                            className="absolute right-0 mt-3 w-56 bg-black/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-3xl z-[150] overflow-hidden"
+                            className="absolute right-0 mt-3 w-56 bg-background/95 backdrop-blur-3xl border border-border rounded-2xl shadow-3xl z-[150] overflow-hidden"
                           >
-                             <div className="p-4 bg-white/[0.03] border-b border-white/5">
-                                <span className="text-[10px] font-black uppercase text-white truncate block">{profile?.display_name || 'Builder'}</span>
+                             <div className="p-4 bg-foreground/[0.02] border-b border-border">
+                                <span className="text-[10px] font-black uppercase text-foreground truncate block">{profile?.display_name || 'Builder'}</span>
                                 <span className="text-[8px] text-muted font-mono truncate block">@{profile?.username || 'anonymous'}</span>
                              </div>
                              <div className="p-1.5 flex flex-col gap-0.5">
