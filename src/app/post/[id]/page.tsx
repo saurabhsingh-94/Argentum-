@@ -6,7 +6,8 @@ import MarkdownRenderer from '@/components/MarkdownRenderer'
 import ReactionButton from '@/components/ReactionButton'
 import CommentsSection from '@/components/CommentsSection'
 import ReportModal from '@/components/ReportModal'
-import { Calendar, ShieldCheck, Tag, Flag, ArrowLeft, Zap, Activity } from 'lucide-react'
+import { Calendar, ShieldCheck, Tag, Flag, ArrowLeft, Zap, Activity, ClipboardCheck, AlertCircle, Check } from 'lucide-react'
+import { hashContent } from '@/lib/utils/hash'
 import Link from 'next/link'
 import { useState, useEffect, use } from 'react'
 import VerificationBadge from '@/components/VerificationBadge'
@@ -29,15 +30,29 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
     if (!post) return
     setVerifying(true)
     try {
+      // Generate hash only when applying for verification
+      const hash = await hashContent(post.content)
+
       const res = await fetch('/api/blockchain/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: post.id }),
+        body: JSON.stringify({ postId: post.id, contentHash: hash }), // Pass hash to API
       })
       const data = await res.json()
       if (data.status === 'verified' || data.status === 'already_verified') {
+        // Update post with hash and status
+        await supabase
+          .from('posts')
+          .update({ 
+            content_hash: hash,
+            verification_status: 'verified',
+            verified_at: new Date().toISOString()
+          })
+          .eq('id', post.id)
+
         setPost((prev: any) => ({
           ...prev,
+          content_hash: hash,
           verification_status: 'verified',
           hcs_sequence_num: data.hcs_sequence_num ?? prev.hcs_sequence_num,
           nft_token_id: data.nft_token_id ?? prev.nft_token_id,
@@ -263,6 +278,74 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         postId={post.id}
         currentUserId={currentUser?.id}
       />
+
+      {/* Manual Hash Verifier */}
+      {post.verification_status === 'verified' && (
+        <div className="mt-20 border-t border-border pt-20">
+            <ManualHashVerifier storedHash={post.content_hash} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ManualHashVerifier({ storedHash }: { storedHash: string }) {
+  const [inputText, setInputText] = useState('')
+  const [result, setResult] = useState<'idle' | 'matching' | 'mismatch'>('idle')
+  const [isVerifying, setIsVerifying] = useState(false)
+
+  const handleVerify = async () => {
+    setIsVerifying(true)
+    const hash = await hashContent(inputText)
+    setResult(hash === storedHash ? 'matching' : 'mismatch')
+    setIsVerifying(false)
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
+                <ClipboardCheck size={20} className="text-accent" />
+                Manual Integrity Check
+            </h3>
+            <p className="text-xs text-foreground/40 leading-relaxed font-medium">
+                Verify the integrity of this post by pasting the raw content below. Our algorithm will recalculate the SHA-256 hash and compare it with the immutable record on the network.
+            </p>
+        </div>
+
+        <div className="glass-card p-8 flex flex-col gap-6">
+            <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Paste the raw markdown content here to verify..."
+                className="w-full bg-background border border-border rounded-2xl p-6 text-sm focus:outline-none focus:border-accent/40 transition-all min-h-[200px] font-mono resize-none"
+            />
+            
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleVerify}
+                        disabled={!inputText.trim() || isVerifying}
+                        className="px-8 py-3 silver-metallic rounded-xl text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-all disabled:opacity-30"
+                    >
+                        {isVerifying ? 'Recalculating...' : 'Verify Content Integrity'}
+                    </button>
+                    {result !== 'idle' && (
+                        <div className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-left-2 ${result === 'matching' ? 'text-green-500' : 'text-red-500'}`}>
+                            {result === 'matching' ? (
+                                <><Check size={14} /> Hash Confirmed: Match Found</>
+                            ) : (
+                                <><AlertCircle size={14} /> Integrity Warning: No Match</>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                    <span className="text-[8px] font-black text-foreground/20 uppercase tracking-widest">Post Anchor Hash</span>
+                    <span className="text-[10px] font-mono text-foreground/60 break-all max-w-[200px]">{storedHash}</span>
+                </div>
+            </div>
+        </div>
     </div>
   )
 }
