@@ -163,7 +163,7 @@ export default function Navbar({ onSearchClick }: NavbarProps) {
             pointer-events-auto relative
             bg-black/80 backdrop-blur-2xl border border-white/10
             shadow-[0_0_40px_rgba(0,0,0,0.5),0_0_1px_rgba(255,255,255,0.1)]
-            overflow-hidden group/island silver-glow-sm
+            overflow-hidden group/island silver-glow-sm island-shimmer
           `}
         >
           {/* Inner Content Wrapper */}

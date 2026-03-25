@@ -862,3 +862,40 @@ a:active,
   background: linear-gradient(135deg, #ffffff, #a1a1aa);
   box-shadow: 0 0 30px rgba(192, 192, 192, 0.4);
 }
+
+/* 15. Dynamic Island Specifics */
+.silver-glow-sm {
+  box-shadow: 
+    0 0 40px rgba(0, 0, 0, 0.5),
+    0 0 1px 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.island-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.island-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: island-shimmer 8s infinite linear;
+}
+
+@keyframes island-shimmer {
+  0% { left: -100%; }
+  20% { left: 150%; }
+  100% { left: 150%; }
+}
+
