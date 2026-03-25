@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CategoryFilter from './CategoryFilter'
 import InfiniteFeed from './InfiniteFeed'
 import { createClient } from '@/lib/supabase/client'
@@ -10,6 +10,11 @@ export default function FeedWithFilter({ initialPosts }: { initialPosts: any[] }
   const [posts, setPosts] = useState(initialPosts)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const supabase = createClient() as any
+
+  // Sync state with incoming props from server components
+  useEffect(() => {
+    setPosts(initialPosts)
+  }, [initialPosts])
 
   const handleCategoryChange = async (category: string) => {
     setIsTransitioning(true)
