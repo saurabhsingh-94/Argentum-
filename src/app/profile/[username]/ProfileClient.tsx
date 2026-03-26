@@ -22,6 +22,7 @@ interface ProfileClientProps {
 
 export default function ProfileClient({ initialProfile, posts, isOwner, currentUserId }: ProfileClientProps) {
   const [profile, setProfile] = useState(initialProfile)
+  const [localPosts, setLocalPosts] = useState(posts)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -31,6 +32,10 @@ export default function ProfileClient({ initialProfile, posts, isOwner, currentU
 
   const handleUpdateProfile = (updatedProfile: Database['public']['Tables']['users']['Row']) => {
     setProfile(updatedProfile)
+  }
+
+  const handlePostDelete = (postId: string) => {
+    setLocalPosts(prev => prev.filter(post => post.id !== postId))
   }
 
   const container = {
@@ -221,9 +226,9 @@ export default function ProfileClient({ initialProfile, posts, isOwner, currentU
           >
             {/* Extended Stats Row */}
             <motion.div variants={item} className="grid grid-cols-3 gap-4">
-              <StatsCard label="Builds" value={posts?.length || 0} icon={<Zap size={20} className="text-accent" />} />
+              <StatsCard label="Builds" value={localPosts?.length || 0} icon={<Zap size={20} className="text-accent" />} />
               <StatsCard label="Streak" value={profile.streak_count || 0} icon={<Flame size={20} className="text-orange-500" />} />
-              <StatsCard label="Verified" value={posts?.filter((p) => p.verification_status === 'verified').length || 0} icon={<Award size={20} className="text-blue-500" />} />
+              <StatsCard label="Verified" value={localPosts?.filter((p) => p.verification_status === 'verified').length || 0} icon={<Award size={20} className="text-blue-500" />} />
             </motion.div>
 
             {/* Build Feed */}
@@ -236,16 +241,23 @@ export default function ProfileClient({ initialProfile, posts, isOwner, currentU
                 </div>
               </div>
               
-              {posts && posts.length > 0 ? (
+              {localPosts && localPosts.length > 0 ? (
                 <motion.div 
                   variants={container}
                   className="grid grid-cols-1 md:grid-cols-2 gap-6"
                 >
-                  {posts.map((post) => (
-                    <motion.div key={post.id} variants={item}>
-                      <PostCard post={post} />
-                    </motion.div>
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {localPosts.map((post) => (
+                      <motion.div key={post.id} variants={item}>
+                        <PostCard 
+                          post={post} 
+                          isOwner={isOwner} 
+                          currentUserId={currentUserId}
+                          onDelete={handlePostDelete}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </motion.div>
               ) : (
                 <EmptyState 

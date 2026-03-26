@@ -33,12 +33,14 @@ export default function PostCard({
   post, 
   isOwner, 
   currentUserId,
-  onReport
+  onReport,
+  onDelete
 }: { 
   post: Post, 
   isOwner?: boolean, 
   currentUserId?: string,
-  onReport?: (postId: string) => void
+  onReport?: (postId: string) => void,
+  onDelete?: (postId: string) => void
 }) {
   const supabase = createClient() as any
   const [showMenu, setShowMenu] = useState(false)
@@ -116,8 +118,8 @@ export default function PostCard({
 
       if (error) throw error
       
-      // Successfully deleted
-      router.refresh()
+      // Successfully deleted - notify parent for real-time vanish
+      onDelete?.(post.id)
     } catch (error: any) {
       console.error('Delete error:', error)
       alert(`Failed to delete post: ${error.message}`)
@@ -138,6 +140,7 @@ export default function PostCard({
       ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, x: -10, transition: { duration: 0.2 } }}
       viewport={{ once: true }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -215,7 +218,9 @@ export default function PostCard({
               <div className="flex items-center gap-2 text-[10px] text-text-muted truncate">
                 <span className="font-mono">@{post.users?.username}</span>
                 <span>•</span>
-                <span className="whitespace-nowrap">Joined {post.users?.created_at ? new Date(post.users.created_at).toLocaleDateString([], { month: 'short', year: 'numeric' }) : '...'}</span>
+                <span className="whitespace-nowrap">
+                  {new Date(post.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             </div>
           </div>

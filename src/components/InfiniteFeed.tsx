@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import PostCard from './PostCard'
 import { Loader2 } from 'lucide-react'
@@ -65,18 +66,26 @@ export default function InfiniteFeed({ initialPosts, category }: InfiniteFeedPro
     }
     setTimeout(() => setLoading(false), 500)
   }
+  
+  const handlePostDelete = (postId: string) => {
+    setPosts(prev => prev.filter(post => post.id !== postId))
+  }
 
   return (
     <div className="flex flex-col gap-10">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {posts.map((post) => (
-          <PostCard 
-            key={post.id} 
-            post={post} 
-            currentUserId={currentUserId || undefined}
-            onReport={(id) => setReportingPostId(id)}
-          />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {posts.map((post) => (
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              isOwner={currentUserId === post.user_id}
+              currentUserId={currentUserId || undefined}
+              onReport={(id) => setReportingPostId(id)}
+              onDelete={handlePostDelete}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       <ReportModal 
