@@ -80,19 +80,27 @@ export default function Onboarding() {
 
     const checkAvailability = async () => {
       setUsernameStatus('checking')
+      // Ensure we check against lowercase version
       const { data, error } = await supabase
         .from('users')
         .select('username')
-        .eq('username', username.toLowerCase())
-        .neq('id', user?.id) // Ignore current user's record
-        .single()
+        .ilike('username', username.toLowerCase())
+        .neq('id', user?.id)
+        .maybeSingle()
 
-      if (error && error.code === 'PGRST116') { // Not found -> Available
-        setUsernameStatus('available')
-        setUsernameMessage('Username available')
-      } else {
+      if (error) {
+        console.error('Availability check error:', error)
+        // If we can't check, be cautious
+        setUsernameStatus('idle')
+        return
+      }
+
+      if (data) {
         setUsernameStatus('taken')
         setUsernameMessage('Username already taken')
+      } else {
+        setUsernameStatus('available')
+        setUsernameMessage('Username available')
       }
     }
 
@@ -122,7 +130,15 @@ export default function Onboarding() {
         // Based on my research, email IS in the DB but let's be safe and only send what's needed.
       })
 
-      if (error) throw error
+      if (error) {
+        // Handle unique constraint violation (username already taken)
+        if (error.code === '23505' || error.message?.includes('users_username_key')) {
+          setUsernameStatus('taken')
+          setUsernameMessage('Username already taken')
+          throw new Error('This username is already taken. Please choose another.')
+        }
+        throw error
+      }
       
       // Also update auth metadata so Navbar/Client pick it up immediately
       await supabase.auth.updateUser({
@@ -134,7 +150,7 @@ export default function Onboarding() {
     } catch (error: any) {
       console.error('Onboarding error detailed:', error)
       const message = error?.message || 'An unknown error occurred'
-      alert(`Onboarding Error: ${message}`)
+      alert(message)
     } finally {
       setLoading(false)
     }
